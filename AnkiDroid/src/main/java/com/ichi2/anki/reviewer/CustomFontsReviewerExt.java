@@ -23,7 +23,6 @@ import android.text.TextUtils;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.AnkiFont;
 import com.ichi2.libanki.Utils;
-import com.ichi2.themes.Themes;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,25 +35,16 @@ public class CustomFontsReviewerExt implements ReviewerExt {
     private String mOverrideFontStyle;
     private String mThemeFontStyle;
     private String mDominantFontStyle;
-    private final boolean mSupportsQuickUpdate;
-
 
     public CustomFontsReviewerExt(Context context) {
         Map<String, AnkiFont> customFontsMap = getCustomFontsMap(context);
         mCustomStyle = getCustomFontsStyle(customFontsMap) + getDominantFontStyle(context, customFontsMap);
-        mSupportsQuickUpdate = customFontsMap.size() == 0;
     }
 
 
     @Override
     public void updateCssStyle(StringBuilder cssStyle) {
         cssStyle.append(mCustomStyle);
-    }
-
-
-    @Override
-    public boolean supportsQuickUpdate() {
-        return mSupportsQuickUpdate;
     }
 
 
@@ -109,7 +99,7 @@ public class CustomFontsReviewerExt implements ReviewerExt {
             SharedPreferences preferences = AnkiDroidApp.getSharedPrefs(context);
             AnkiFont defaultFont = customFontsMap.get(preferences.getString("defaultFont", null));
             if (defaultFont != null) {
-                mDefaultFontStyle = "BODY { " + defaultFont.getCSS() + " }\n";
+                mDefaultFontStyle = "BODY { " + defaultFont.getCSS(false) + " }\n";
             } else {
                 mDefaultFontStyle = "";
             }
@@ -129,7 +119,7 @@ public class CustomFontsReviewerExt implements ReviewerExt {
             AnkiFont defaultFont = customFontsMap.get(preferences.getString("defaultFont", null));
             boolean overrideFont = preferences.getString("overrideFontBehavior", "0").equals("1");
             if (defaultFont != null && overrideFont) {
-                mOverrideFontStyle = "BODY, .card, * { " + defaultFont.getCSS() + " }\n";
+                mOverrideFontStyle = "BODY, .card, * { " + defaultFont.getCSS(true) + " }\n";
             } else {
                 mOverrideFontStyle = "";
             }
@@ -164,7 +154,7 @@ public class CustomFontsReviewerExt implements ReviewerExt {
      */
     private static Map<String, AnkiFont> getCustomFontsMap(Context context) {
         List<AnkiFont> fonts = Utils.getCustomFonts(context);
-        Map<String, AnkiFont> customFontsMap = new HashMap<String, AnkiFont>();
+        Map<String, AnkiFont> customFontsMap = new HashMap<>();
         for (AnkiFont f : fonts) {
             customFontsMap.put(f.getName(), f);
         }

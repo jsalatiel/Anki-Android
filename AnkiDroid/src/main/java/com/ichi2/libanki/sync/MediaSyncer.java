@@ -22,9 +22,8 @@ import android.util.Pair;
 
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.R;
-import com.ichi2.anki.exception.APIVersionException;
+import com.ichi2.anki.exception.MediaSyncException;
 import com.ichi2.anki.exception.UnknownHttpResponseException;
-import com.ichi2.anki.exception.UnsupportedSyncException;
 import com.ichi2.async.Connection;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Consts;
@@ -37,7 +36,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.ZipFile;
 
 import timber.log.Timber;
@@ -78,7 +79,7 @@ public class MediaSyncer {
     }
 
 
-    public String sync() throws UnsupportedSyncException {
+    public String sync() throws UnknownHttpResponseException, MediaSyncException {
         try {
             // check if there have been any changes
             // If we haven't built the media db yet, do so on this sync. See note at the top
@@ -100,13 +101,9 @@ public class MediaSyncer {
             mCol.log("last local usn is " + lastUsn);
             mDownloadCount = 0;
             while (true) {
-                // Allow cancellation
+                // Allow cancellation (note: media sync has no finish command, so just throw)
                 if (Connection.getIsCancelled()) {
                     Timber.i("Sync was cancelled");
-                    try {
-                        mServer.finish();
-                    } catch (UnknownHttpResponseException e) {
-                    }
                     throw new RuntimeException("UserAbortedSync");
                 }
                 JSONArray data = mServer.mediaChanges(lastUsn);
@@ -115,16 +112,27 @@ public class MediaSyncer {
                     break;
                 }
 
-                List<String> need = new ArrayList<String>();
+                List<String> need = new ArrayList<>();
                 lastUsn = data.getJSONArray(data.length()-1).getInt(1);
                 for (int i = 0; i < data.length(); i++) {
+                    // Allow cancellation (note: media sync has no finish command, so just throw)
+                    if (Connection.getIsCancelled()) {
+                        Timber.i("Sync was cancelled");
+                        throw new RuntimeException("UserAbortedSync");
+                    }
                     String fname = data.getJSONArray(i).getString(0);
                     int rusn = data.getJSONArray(i).getInt(1);
-                    String rsum = data.getJSONArray(i).optString(2);
+                    String rsum = null;
+                    if (!data.getJSONArray(i).isNull(2)) {
+                        // If `rsum` is a JSON `null` value, `.optString(2)` will
+                        // return `"null"` as a string
+                        rsum = data.getJSONArray(i).optString(2);
+                    }
                     Pair<String, Integer> info = mCol.getMedia().syncInfo(fname);
                     String lsum = info.first;
                     int ldirty = info.second;
-                    mCol.log(String.format("check: lsum=%s rsum=%s ldirty=%d rusn=%d fname=%s",
+                    mCol.log(String.format(Locale.US,
+                            "check: lsum=%s rsum=%s ldirty=%d rusn=%d fname=%s",
                             TextUtils.isEmpty(lsum) ? "" : lsum.subSequence(0, 4),
                             TextUtils.isEmpty(rsum) ? "" : rsum.subSequence(0, 4),
                             ldirty,
@@ -139,11 +147,11 @@ public class MediaSyncer {
                         } else {
                             mCol.log("have same already");
                         }
-                        mCol.getMedia().markClean(Arrays.asList(fname));
+                        mCol.getMedia().markClean(Collections.singletonList(fname));
                         
                     } else if (!TextUtils.isEmpty(lsum)) {
                         // deleted remotely
-                        if (ldirty != 0) {
+                        if (ldirty == 0) {
                             mCol.log("delete local");
                             mCol.getMedia().syncDelete(fname);
                         } else {
@@ -153,7 +161,7 @@ public class MediaSyncer {
                     } else {
                         // deleted both sides
                         mCol.log("both sides deleted");
-                        mCol.getMedia().markClean(Arrays.asList(fname));
+                        mCol.getMedia().markClean(Collections.singletonList(fname));
                     }
                 }
                 _downloadFiles(need);
@@ -184,7 +192,8 @@ public class MediaSyncer {
                     int serverLastUsn = changes.getInt(1);
                     mCol.getMedia().markClean(fnames.subList(0, processedCnt));
 
-                    mCol.log(String.format("processed %d, serverUsn %d, clientUsn %d",
+                    mCol.log(String.format(Locale.US,
+                            "processed %d, serverUsn %d, clientUsn %d",
                             processedCnt, serverLastUsn, lastUsn));
 
                     if (serverLastUsn - processedCnt == lastUsn) {
@@ -218,18 +227,11 @@ public class MediaSyncer {
             }
         } catch (JSONException e) {
             throw new RuntimeException(e);
-        } catch (APIVersionException e) {
-            UnsupportedSyncException ee = new UnsupportedSyncException("Cannot sync media on this version of Android");
-            Timber.e(e.getMessage());
-            throw ee;
-        } catch (Exception e) {
-            Timber.e(e, "Syncing error");
-            throw new RuntimeException(e);
         }
     }
 
 
-    private void _downloadFiles(List<String> fnames) throws APIVersionException {
+    private void _downloadFiles(List<String> fnames) {
         mCol.log(fnames.size() + " files to fetch");
         while (fnames.size() > 0) {
             try {
@@ -249,10 +251,7 @@ public class MediaSyncer {
                 }
                 mCon.publishProgress(String.format(
                         AnkiDroidApp.getAppResources().getString(R.string.sync_media_downloaded_count), mDownloadCount));
-            } catch (IOException e) {
-                Timber.e(e, "Error downloading media files");
-                throw new RuntimeException(e);
-            } catch (UnknownHttpResponseException e) {
+            } catch (IOException | UnknownHttpResponseException e) {
                 Timber.e(e, "Error downloading media files");
                 throw new RuntimeException(e);
             }

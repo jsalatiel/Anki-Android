@@ -18,12 +18,14 @@ package com.wildplot.android.rendering;
 
 import android.graphics.Typeface;
 
-import com.ichi2.anki.AnkiDroidApp;
 import com.wildplot.android.rendering.graphics.wrapper.*;
 import com.wildplot.android.rendering.interfaces.Drawable;
 import com.wildplot.android.rendering.interfaces.Legendable;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
@@ -43,7 +45,10 @@ public class PlotSheet implements Drawable {
 
     protected float fontSize = 10f;
     protected boolean fontSizeSet = false;
-    
+
+    protected ColorWrap backgroundColor = ColorWrap.white;
+    protected ColorWrap textColor = ColorWrap.black;
+
     /**
      * title of plotSheet
      */
@@ -53,7 +58,9 @@ public class PlotSheet implements Drawable {
      * not yet implemented
      */
     protected boolean isMultiMode = false;
-    
+
+    protected boolean isBackwards = false;
+
     /**
      * thickness of frame in pixel
      */
@@ -87,8 +94,11 @@ public class PlotSheet implements Drawable {
     /**
      * the ploting screens, screen 0 is the only one in single mode
      */
-    Vector<MultiScreenPart> screenParts = new Vector<MultiScreenPart>();
-    private HashMap<String, ColorWrap> mLegendMap = new HashMap<String, ColorWrap>();
+    Vector<MultiScreenPart> screenParts = new Vector<>();
+
+    //Use LinkedHashMap so that the legend items will be displayed in the order
+    //in which they were added
+    private Map<String, ColorWrap> mLegendMap = new LinkedHashMap<>();
     private boolean mDrawablesPrepared = false;
 
     /**
@@ -326,12 +336,12 @@ public class PlotSheet implements Drawable {
         RectangleWrap field = g.getClipBounds();
         this.currentScreen = screenNr;
         prepareDrawables();
-        Vector<Drawable> offFrameDrawables = new Vector<Drawable>();
-        Vector<Drawable> onFrameDrawables = new Vector<Drawable>();
+        Vector<Drawable> offFrameDrawables = new Vector<>();
+        Vector<Drawable> onFrameDrawables = new Vector<>();
 
 
         g.setTypeface(typeface);
-        g.setColor(ColorWrap.white);
+        g.setColor(backgroundColor);
         g.fillRect(0, 0, field.width, field.height);
         g.setColor(ColorWrap.BLACK);
 
@@ -360,7 +370,7 @@ public class PlotSheet implements Drawable {
         //paint white frame to over paint everything that was drawn over the border 
         ColorWrap oldColor = g.getColor();
         if(leftFrameThickness>0 || rightFrameThickness > 0 || upperFrameThickness > 0 || bottomFrameThickness > 0){
-            g.setColor(ColorWrap.white);
+            g.setColor(backgroundColor);
             //upper frame
             g.fillRect(0, 0, field.width, upperFrameThickness);
 
@@ -413,7 +423,11 @@ public class PlotSheet implements Drawable {
                 g.setFontSize(oldFontSize);
             }
 
-            Set<String> keySet = mLegendMap.keySet();
+            List<String> keyList = new Vector<>(mLegendMap.keySet());
+
+            if(isBackwards) {
+                Collections.reverse(keyList);
+            }
 
             float oldFontSize = g.getFontSize();
             g.setFontSize(oldFontSize* 0.9f);
@@ -428,7 +442,8 @@ public class PlotSheet implements Drawable {
 
             int legendCnt = 0;
             Timber.d("should draw legend now, number of legend entries: %d", mLegendMap.size());
-            for(String legendName : keySet){
+
+            for(String legendName : keyList){
 
                 float stringWidth = fm.stringWidth(" : "+legendName);
 
@@ -441,14 +456,16 @@ public class PlotSheet implements Drawable {
                     ySpacer += rectangleSize + spacerValue;
                 }
                 g.fillRect(xPointer, ySpacer, rectangleSize, rectangleSize);
-                g.setColor(ColorWrap.BLACK);
+                g.setColor(textColor);
+
                 g.drawString(" : "+legendName, xPointer + rectangleSize , ySpacer+rectangleSize);
                 xPointer += rectangleSize*1.3f + stringWidth;
                 Timber.d("drawing a legend Item: (%s) %d, x: %,.2f , y: %,.2f", legendName, legendCnt, xPointer + rectangleSize, ySpacer+rectangleSize);
 
             }
             g.setFontSize(oldFontSize);
-            g.setColor(ColorWrap.BLACK);
+            //g.setColor(ColorWrap.BLACK);
+            g.setColor(textColor);
 //          gFrame.setFont(oldFont);
         }
 
@@ -467,8 +484,8 @@ public class PlotSheet implements Drawable {
         if(!mDrawablesPrepared) {
             mDrawablesPrepared = true;
             Vector<Drawable> drawables = this.screenParts.get(0).getDrawables();
-            Vector<Drawable> onFrameDrawables = new Vector<Drawable>();
-            Vector<Drawable> offFrameDrawables = new Vector<Drawable>();
+            Vector<Drawable> onFrameDrawables = new Vector<>();
+            Vector<Drawable> offFrameDrawables = new Vector<>();
 
             DrawableContainer onFrameContainer = new DrawableContainer(true, false);
 
@@ -715,8 +732,24 @@ public class PlotSheet implements Drawable {
 
     }
 
+    /**
+     * Show the legend items in reverse order of the order in which they were added.
+     * @param isBackwards If true, the legend items are shown in reverse order.
+     */
+    public void setIsBackwards(boolean isBackwards) {
+        this.isBackwards = isBackwards;
+    }
+
     public void setFontSize(float fontSize) {
         fontSizeSet = true;
         this.fontSize = fontSize;
+    }
+
+    public void setBackgroundColor(ColorWrap backgroundColor) {
+        this.backgroundColor = backgroundColor;
+    }
+
+    public void setTextColor(ColorWrap textColor) {
+        this.textColor = textColor;
     }
 }

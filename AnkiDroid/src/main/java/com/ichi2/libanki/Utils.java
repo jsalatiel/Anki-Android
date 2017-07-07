@@ -27,13 +27,10 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.text.Html;
-
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
-import com.ichi2.anki.AnkiDb;
-import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.AnkiFont;
 import com.ichi2.anki.CollectionHelper;
 import com.ichi2.anki.R;
@@ -64,6 +61,7 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
+import java.text.Normalizer;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -75,6 +73,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.TreeSet;
@@ -86,24 +85,13 @@ import java.util.zip.ZipFile;
 
 import timber.log.Timber;
 
-/**
- * TODO comments
- */
 public class Utils {
-    enum SqlCommandType { SQL_INS, SQL_UPD, SQL_DEL };
-
     // Used to format doubles with English's decimal separator system
     public static final Locale ENGLISH_LOCALE = new Locale("en_US");
 
     public static final int CHUNK_SIZE = 32768;
 
-    private static final int DAYS_BEFORE_1970 = 719163;
-
-    private static NumberFormat mCurrentNumberFormat;
     private static NumberFormat mCurrentPercentageFormat;
-
-    private static TreeSet<Long> sIdTree;
-    private static long sIdTime;
 
     // These are doubles on purpose because we want a rounded, not integer result later.
     private static final double TIME_MINUTE = 60.0;  // seconds
@@ -205,6 +193,24 @@ public class Utils {
         }
     }
 
+    /**
+     * Return a proper string for a time value in seconds
+     *
+     * @param context The application's environment.
+     * @param time_s The time to format, in seconds
+     * @return The formatted, localized time string. The time is always a float.
+     */
+    public static String roundedTimeSpan(Context context, int time_s) {
+        if (Math.abs(time_s) < TIME_DAY) {
+            return context.getResources().getString(R.string.stats_overview_hours, time_s/TIME_HOUR);
+        } else if (Math.abs(time_s) < TIME_MONTH) {
+            return context.getResources().getString(R.string.stats_overview_days, time_s/TIME_DAY);
+        } else if (Math.abs(time_s) < TIME_YEAR) {
+            return context.getResources().getString(R.string.stats_overview_months,time_s/TIME_MONTH);
+        } else {
+            return context.getResources().getString(R.string.stats_overview_years, time_s/TIME_YEAR);
+        }
+    }
 
     /**
      * Locale
@@ -222,7 +228,6 @@ public class Utils {
         if (mCurrentPercentageFormat == null) {
             mCurrentPercentageFormat = NumberFormat.getPercentInstance(LanguageUtil.getLocale());
         }
-        mCurrentNumberFormat.setMaximumFractionDigits(point);
         return mCurrentPercentageFormat.format(value);
     }
 
@@ -258,12 +263,6 @@ public class Utils {
     }
 
 
-    private String minimizeHTML(String s) {
-        // TODO
-        return s;
-    }
-
-
     /**
      * Takes a string and replaces all the HTML symbols in it with their unescaped representation.
      * This should only affect substrings of the form &something; and not tags.
@@ -289,16 +288,6 @@ public class Utils {
      * IDs
      * ***********************************************************************************************
      */
-
-    public static String hexifyID(long id) {
-        return Long.toHexString(id);
-    }
-
-
-    public static long dehexifyID(String id) {
-        return Long.valueOf(id, 16);
-    }
-
 
     /** Given a list of integers, return a string '(int1,int2,...)'. */
     public static String ids2str(int[] ids) {
@@ -388,8 +377,12 @@ public class Utils {
         return ar;
     }
 
+    public static Long[] list2ObjectArray(List<Long> list) {
+        return list.toArray(new Long[list.size()]);
+    }
+
     /** Return a non-conflicting timestamp for table. */
-    public static long timestampID(AnkiDb db, String table) {
+    public static long timestampID(DB db, String table) {
         // be careful not to create multiple objects without flushing them, or they
         // may share an ID.
         long t = intNow(1000);
@@ -401,7 +394,7 @@ public class Utils {
 
 
     /** Return the first safe ID to use. */
-    public static long maxID(AnkiDb db) {
+    public static long maxID(DB db) {
         long now = intNow(1000);
         now = Math.max(now, db.queryLongScalar("SELECT MAX(id) FROM cards"));
         now = Math.max(now, db.queryLongScalar("SELECT MAX(id) FROM notes"));
@@ -451,27 +444,6 @@ public class Utils {
         return guid;
     }
 
-//    public static JSONArray listToJSONArray(List<Object> list) {
-//        JSONArray jsonArray = new JSONArray();
-//
-//        for (Object o : list) {
-//            jsonArray.put(o);
-//        }
-//
-//        return jsonArray;
-//    }
-//
-//
-//    public static List<String> jsonArrayToListString(JSONArray jsonArray) throws JSONException {
-//        ArrayList<String> list = new ArrayList<String>();
-//
-//        int len = jsonArray.length();
-//        for (int i = 0; i < len; i++) {
-//            list.add(jsonArray.getString(i));
-//        }
-//
-//        return list;
-//    }
 
     public static long[] jsonArrayToLongArray(JSONArray jsonArray) throws JSONException {
         long[] ar = new long[jsonArray.length()];
@@ -479,6 +451,19 @@ public class Utils {
             ar[i] = jsonArray.getLong(i);
         }
         return ar;
+    }
+
+
+    public static Object[] jsonArray2Objects(JSONArray array) {
+        Object[] o = new Object[array.length()];
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                o[i] = array.get(i);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return o;
     }
 
     /**
@@ -499,16 +484,8 @@ public class Utils {
 
 
     public static String[] splitFields(String fields) {
-        // do not drop empty fields
-        fields = fields.replaceAll("\\x1f\\x1f", "\u001f\u001e\u001f");
-        fields = fields.replaceAll("\\x1f$", "\u001f\u001e");
-        String[] split = fields.split("\\x1f");
-        for (int i = 0; i < split.length; i++) {
-            if (split[i].matches("\\x1e")) {
-                split[i] = "";
-            }
-        }
-        return split;
+        // -1 ensures that we don't drop empty fields at the ends
+        return fields.split("\\x1f", -1);
     }
 
     /**
@@ -609,58 +586,12 @@ public class Utils {
     }
 
 
-//    /**
-//     * MD5 sum of file.
-//     * Equivalent to checksum(open(os.path.join(mdir, file), "rb").read()))
-//     *
-//     * @param path The full path to the file
-//     * @return A string of length 32 containing the hexadecimal representation of the MD5 checksum of the contents
-//     * of the file
-//     */
-//    public static String fileChecksum(String path) {
-//        byte[] bytes = null;
-//        try {
-//            File file = new File(path);
-//            if (file != null && file.isFile()) {
-//                bytes = new byte[(int)file.length()];
-//                FileInputStream fin = new FileInputStream(file);
-//                fin.read(bytes);
-//            }
-//        } catch (FileNotFoundException e) {
-//            Timber.e("Can't find file " + path + " to calculate its checksum");
-//        } catch (IOException e) {
-//            Timber.e("Can't read file " + path + " to calculate its checksum");
-//        }
-//        if (bytes == null) {
-//            Timber.w("File " + path + " appears to be empty");
-//            return "";
-//        }
-//        MessageDigest md = null;
-//        byte[] digest = null;
-//        try {
-//            md = MessageDigest.getInstance("MD5");
-//            digest = md.digest(bytes);
-//        } catch (NoSuchAlgorithmException e) {
-//            Timber.e("Utils.checksum: No such algorithm. " + e.getMessage());
-//            throw new RuntimeException(e);
-//        }
-//        BigInteger biginteger = new BigInteger(1, digest);
-//        String result = biginteger.toString(16);
-//        // pad with zeros to length of 32
-//        if (result.length() < 32) {
-//            result = "00000000000000000000000000000000".substring(0, 32 - result.length()) + result;
-//        }
-//        return result;
-//    }
-
     /**
      *  Tempo files
      * ***********************************************************************************************
      */
 
-    // tmpdir
-    // tmpfile
-    // namedtmp
+
     /**
      * Converts an InputStream to a String.
      * @param is InputStream to convert
@@ -685,15 +616,15 @@ public class Utils {
     }
 
 
-    public static boolean unzipFiles(ZipFile zipFile, String targetDirectory, String[] zipEntries, HashMap<String, String> zipEntryToFilenameMap) {
+    public static void unzipFiles(ZipFile zipFile, String targetDirectory, String[] zipEntries,
+                                  Map<String, String> zipEntryToFilenameMap) throws IOException {
         byte[] buf = new byte[FILE_COPY_BUFFER_SIZE];
         File dir = new File(targetDirectory);
         if (!dir.exists() && !dir.mkdirs()) {
-            Timber.e("Utils.unzipFiles: Could not create target directory: " + targetDirectory);
-            return false;
+            throw new IOException("Failed to create target directory: " + targetDirectory);
         }
         if (zipEntryToFilenameMap == null) {
-            zipEntryToFilenameMap = new HashMap<String, String>();
+            zipEntryToFilenameMap = new HashMap<>();
         }
         BufferedInputStream zis = null;
         BufferedOutputStream bos = null;
@@ -706,10 +637,6 @@ public class Utils {
                         name = zipEntryToFilenameMap.get(name);
                     }
                     File destFile = new File(dir, name);
-                    File parentDir = destFile.getParentFile();
-                    if (!parentDir.exists() && !parentDir.mkdirs()) {
-                        return false;
-                    }
                     if (!ze.isDirectory()) {
                         Timber.i("uncompress %s", name);
                         zis = new BufferedInputStream(zipFile.getInputStream(ze));
@@ -724,26 +651,14 @@ public class Utils {
                     }
                 }
             }
-        } catch (IOException e) {
-            Timber.e(e, "Utils.unzipFiles: Error while unzipping archive.");
-            return false;
         } finally {
-            try {
-                if (bos != null) {
-                    bos.close();
-                }
-            } catch (IOException e) {
-                Timber.e(e, "Utils.unzipFiles: Error while closing output stream.");
+            if (bos != null) {
+                bos.close();
             }
-            try {
-                if (zis != null) {
-                    zis.close();
-                }
-            } catch (IOException e) {
-                Timber.e(e, "Utils.unzipFiles: Error while closing zip input stream.");
+            if (zis != null) {
+                zis.close();
             }
         }
-        return true;
     }
 
     /**
@@ -814,89 +729,6 @@ public class Utils {
     }
 
 
-    // Print methods
-    public static void printJSONObject(JSONObject jsonObject) {
-        printJSONObject(jsonObject, "-", null);
-    }
-
-
-    public static void printJSONObject(JSONObject jsonObject, boolean writeToFile) {
-        BufferedWriter buff;
-        try {
-            buff = writeToFile ?
-                    new BufferedWriter(new FileWriter("/sdcard/payloadAndroid.txt"), 8192) : null;
-            try {
-                printJSONObject(jsonObject, "-", buff);
-            } finally {
-                if (buff != null) {
-                    buff.close();
-                }
-            }
-        } catch (IOException ioe) {
-            Timber.e(ioe, "printJSONObject.IOException");
-        }
-    }
-
-
-    private static void printJSONObject(JSONObject jsonObject, String indentation, BufferedWriter buff) {
-        try {
-            @SuppressWarnings("unchecked") Iterator<String> keys = (Iterator<String>) jsonObject.keys();
-            TreeSet<String> orderedKeysSet = new TreeSet<String>();
-            while (keys.hasNext()) {
-                orderedKeysSet.add(keys.next());
-            }
-
-            Iterator<String> orderedKeys = orderedKeysSet.iterator();
-            while (orderedKeys.hasNext()) {
-                String key = orderedKeys.next();
-
-                try {
-                    Object value = jsonObject.get(key);
-                    if (value instanceof JSONObject) {
-                        if (buff != null) {
-                            buff.write(indentation + " " + key + " : ");
-                            buff.newLine();
-                        }
-                        Timber.i("  " + indentation + key + " : ");
-                        printJSONObject((JSONObject) value, indentation + "-", buff);
-                    } else {
-                        if (buff != null) {
-                            buff.write(indentation + " " + key + " = " + jsonObject.get(key).toString());
-                            buff.newLine();
-                        }
-                        Timber.i("  " + indentation + key + " = " + jsonObject.get(key).toString());
-                    }
-                } catch (JSONException e) {
-                    Timber.e(e, "printJSONObject : JSONException");
-                }
-            }
-        } catch (IOException e1) {
-            Timber.e(e1, "printJSONObject : IOException");
-        }
-    }
-
-
-    /*
-    public static void saveJSONObject(JSONObject jsonObject) throws IOException {
-        Timber.i("saveJSONObject");
-        BufferedWriter buff = new BufferedWriter(new FileWriter("/sdcard/jsonObjectAndroid.txt", true));
-        buff.write(jsonObject.toString());
-        buff.close();
-    }
-    */
-
-
-    /**
-     * Returns 1 if true, 0 if false
-     *
-     * @param b The boolean to convert to integer
-     * @return 1 if b is true, 0 otherwise
-     */
-    public static int booleanToInt(boolean b) {
-        return (b) ? 1 : 0;
-    }
-
-
     /**
      *  Returns the effective date of the present moment.
      *  If the time is prior the cut-off time (9:00am by default as of 11/02/10) return yesterday,
@@ -912,7 +744,7 @@ public class Utils {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         df.setTimeZone(TimeZone.getTimeZone("GMT"));
         Calendar cal = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-        cal.setTimeInMillis(System.currentTimeMillis() - (long) utcOffset * 1000l);
+        cal.setTimeInMillis(System.currentTimeMillis() - (long) utcOffset * 1000L);
         return Date.valueOf(df.format(cal.getTime()));
     }
 
@@ -960,7 +792,6 @@ public class Utils {
         // with existing slashes
         if (mediaDir.length() != 0 && !mediaDir.equalsIgnoreCase("null")) {
             Uri mediaDirUri = Uri.fromFile(new File(mediaDir));
-
             return mediaDirUri.toString() +"/";
         }
         return "";
@@ -996,24 +827,6 @@ public class Utils {
     }
 
 
-    public static void updateProgressBars(View view, int x, int y) {
-        if (view == null) {
-            return;
-        }
-        if (view.getParent() instanceof LinearLayout) {
-            LinearLayout.LayoutParams lparam = new LinearLayout.LayoutParams(0, 0);
-            lparam.height = y;
-            lparam.width = x;
-            view.setLayoutParams(lparam);
-        } else if (view.getParent() instanceof FrameLayout) {
-            FrameLayout.LayoutParams lparam = new FrameLayout.LayoutParams(0, 0);
-            lparam.height = y;
-            lparam.width = x;
-            view.setLayoutParams(lparam);
-        }
-    }
-
-
     /**
      * Calculate the UTC offset
      */
@@ -1023,32 +836,20 @@ public class Utils {
         return 4 * 60 * 60 - (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / 1000;
     }
 
-    /** Returns the filename without the extension. */
-    public static String removeExtension(String filename) {
-      int dotPosition = filename.lastIndexOf('.');
-      if (dotPosition == -1) {
-        return filename;
-      }
-      return filename.substring(0, dotPosition);
-    }
-
-
-    /** Returns only the filename extension. */
-    public static String getFileExtension(String filename) {
+    /**
+     * Returns a String array with two elements:
+     * 0 - file name
+     * 1 - extension
+     */
+    public static String[] splitFilename(String filename) {
+        String name = filename;
+        String ext = "";
         int dotPosition = filename.lastIndexOf('.');
-        if (dotPosition == -1) {
-            return "";
+        if (dotPosition != -1) {
+            name = filename.substring(0, dotPosition);
+            ext = filename.substring(dotPosition);
         }
-        return filename.substring(dotPosition);
-    }
-
-
-    /** Removes any character that are not valid as deck names. */
-    public static String removeInvalidDeckNameCharacters(String name) {
-        if (name == null) { return null; }
-        // The only characters that we cannot absolutely allow to appear in the filename are the ones reserved in some
-        // file system. Currently these are \, /, and :, in order to cover Linux, OSX, and Windows.
-        return name.replaceAll("[:/\\\\]", "");
+        return new String[] {name, ext};
     }
 
 
@@ -1069,10 +870,10 @@ public class Utils {
         } catch (IOException e) {
             Timber.e(e, "Error on retrieving ankidroid fonts");
         }
-        List<AnkiFont> fonts = new ArrayList<AnkiFont>();
+        List<AnkiFont> fonts = new ArrayList<>();
         for (int i = 0; i < fontsCount; i++) {
             String filePath = fontsList[i].getAbsolutePath();
-            String filePathExtension = getFileExtension(filePath);
+            String filePathExtension = splitFilename(filePath)[1];
             for (String fontExtension : FONT_FILE_EXTENSIONS) {
                 // Go through the list of allowed extensios.
                 if (filePathExtension.equalsIgnoreCase(fontExtension)) {
@@ -1086,9 +887,9 @@ public class Utils {
             }
         }
         if (ankiDroidFonts != null) {
-            for (int i = 0; i < ankiDroidFonts.length; i++) {
+            for (String ankiDroidFont : ankiDroidFonts) {
                 // Assume all files in the assets directory are actually fonts.
-                AnkiFont font = AnkiFont.createAnkiFont(context, ankiDroidFonts[i], true);
+                AnkiFont font = AnkiFont.createAnkiFont(context, ankiDroidFont, true);
                 if (font != null) {
                     fonts.add(font);
                 }
@@ -1114,23 +915,11 @@ public class Utils {
             });
             deckCount = deckList.length;
         }
-        List<File> decks = new ArrayList<File>();
+        List<File> decks = new ArrayList<>();
         decks.addAll(Arrays.asList(deckList).subList(0, deckCount));
         return decks;
     }
 
-
-    /** Joins the given string values using the delimiter between them. */
-    public static String join(String delimiter, String... values) {
-        StringBuilder sb = new StringBuilder();
-        for (String value : values) {
-            if (sb.length() != 0) {
-                sb.append(delimiter);
-            }
-            sb.append(value);
-        }
-        return sb.toString();
-    }
 
     /**
      * Simply copy a file to another location
@@ -1197,5 +986,42 @@ public class Utils {
         String model = android.os.Build.MODEL.replace(',', ' ').replace(':', ' ');
         return String.format(Locale.US, "android:%s:%s",
                 android.os.Build.VERSION.RELEASE, model);
+    }
+
+
+    /*
+     *  Return the input string in the Unicode normalized form. This helps with text comparisons, for example a ü
+     *  stored as u plus the dots but typed as a single character compare as the same.
+     *
+     * @param txt Text to be normalized
+     * @return The input text in its NFC normalized form form.
+    */
+    public static String nfcNormalized(String txt) {
+        if (!Normalizer.isNormalized(txt, Normalizer.Form.NFC)) {
+            return Normalizer.normalize(txt, Normalizer.Form.NFC);
+        }
+        return txt;
+    }
+
+
+    /**
+     * Unescapes all sequences within the given string of text, interpreting them as HTML escaped characters.
+     * <p/>
+     * Not that this code strips any HTML tags untouched, so if the text contains any HTML tags, they will be ignored.
+     *
+     * @param htmlText the text to convert
+     * @return the unescaped text
+     */
+    public static String unescape(String htmlText) {
+        return Html.fromHtml(htmlText).toString();
+    }
+
+
+    /**
+     * Return a random float within the range of min and max.
+     */
+    public static float randomFloatInRange(float min, float max) {
+        Random rand = new Random();
+        return rand.nextFloat() * (max - min) + min;
     }
 }

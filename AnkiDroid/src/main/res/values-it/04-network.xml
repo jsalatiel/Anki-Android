@@ -45,26 +45,26 @@
   <string name="vague_error">Errore</string>
   <string name="retry">Riprova</string>
   <string name="cancel">Annulla</string>
-  <string name="loading_shared_decks">Carico i mazzi condivisi disponibili...</string>
   <string name="terms_and_conditions"><a href="https://ankiweb.net/account/terms">Termini e condizioni</a></string>
   <string name="menu_get_shared_decks">Ottieni mazzi condivisi</string>
   <string name="connection_error_message">Si è verificato un errore di rete.</string>
-  <string name="not_logged_in_title">Accedi a AnkiWeb</string>
-  <string name="login_create_account_message">Devi accedere a un account AnkiWeb. Puoi crearne uno nel passaggio successivo.</string>
-  <string name="no_email_client">Nessun client di posta elettronica disponibile</string>
-  <string name="username">Indirizzo e-mail</string>
+  <string name="not_logged_in_title">Accedi ad AnkiWeb</string>
+  <string name="login_create_account_message">È necessario accedere ad un account di terzi per utilizzare il servizio di sincronizzazione cloud. Puoi crearne uno nel passaggio successivo.</string>
+  <!-- MyAccount.java -->
+  <string name="username">Indirizzo di posta elettronica</string>
   <string name="username_repeat">Ripeti indirizzo e-mail</string>
   <string name="password">Password</string>
   <string name="password_repeat">Ripeti la password</string>
   <string name="log_in">Accedi</string>
   <string name="sign_up_description">Non hai un account AnkiWeb? È gratis!</string>
+  <string name="sign_up_not_affiliated">Nota: AnkiWeb non è affiliato con AnkiDroid</string>
   <string name="sign_up">Registrati</string>
-  <string name="sign_up_terms">Toccando <i>Registrati</i>, confermi di avere letto e di accettare le nostre <a href="https://ankiweb.net/account/terms">condizioni d\'utilizzo</a>.</string>
   <string name="logged_as">Connesso come</string>
   <string name="log_out">Esci</string>
   <string name="alert_logging_message">Accesso in corso, attendi...</string>
   <string name="invalid_username_password">Indirizzo email o password errati</string>
   <string name="reset_password">Reimposta la password</string>
+  <!-- AndroidManifest.xml -->
   <string name="downloaddeck_search">Cerca</string>
   <string name="preferences_title">Preferenze</string>
   <string name="deckpreferences_title">Opzioni per XXX</string>
@@ -114,11 +114,7 @@
   <string name="sync_sanity_failed">Dopo la sincronizzazione, la collezione era in uno stato incoerente. Per risolvere questo problema, AnkiDroid forzerà una sincronizzazione completa. Scegliere quali dati vuoi mantenere, o annulla se preferisci sincronizzare più tardi.</string>
   <string name="sync_media_sanity_failed">Sincronizzazione dei contenuti multimediali terminata, ma il conteggio dei media non corrisponde con il server. La prossima volta verrà eseguita una sincronizzazione completa per correggere eventuali errori.</string>
   <string name="sync_media_error">Errore di sincronizzazione dei dati multimediali.</string>
-  <string name="sync_media_unsupported">I nomi di file multimediali complessi non sono supportati su Android 2.2 e inferiori. La sincronizzazione dei media è stata disattivata.</string>
-  <string name="register_error">Si è verificato un errore. Riprova più tardi.</string>
-  <string name="register_title">Registra account</string>
-  <string name="register_mismatch">La ripetizione del nome utente/password non corrisponde o è vuota. Reinseriscili.</string>
-  <string name="registering_message">Creo account.\nAttendi...</string>
+  <string name="sync_media_error_check">Errore durante la sincronizzazione di media. Si raccomanda un controllo del media.</string>
   <string name="sync_sanity_local">Locale</string>
   <string name="sync_sanity_remote">Remoto</string>
   <string name="force_full_sync_title">Forza sincronizzazione completa</string>

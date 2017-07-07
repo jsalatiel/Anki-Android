@@ -3,11 +3,9 @@ package com.ichi2.anki.dialogs;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.ichi2.anki.R;
-import com.ichi2.themes.Themes;
 
 import android.app.Dialog;
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
@@ -19,6 +17,7 @@ public class CardBrowserContextMenu extends DialogFragment {
     public static final int CONTEXT_MENU_SUSPEND = 1;
     public static final int CONTEXT_MENU_DELETE = 2;
     public static final int CONTEXT_MENU_DETAILS = 3;
+    private static final int MAX_TITLE_LENGTH = 75;
 
     private static MaterialDialog.ListCallback mContextMenuListener;
 
@@ -51,9 +50,13 @@ public class CardBrowserContextMenu extends DialogFragment {
                 getArguments().getBoolean("isSuspended") ?
                         R.string.card_browser_unsuspend_card :
                         R.string.card_browser_suspend_card);
-
+        // Ellipsize the title if it's obscenely long
+        String title = getArguments().getString("dialogTitle");
+        if (title != null && title.length() > MAX_TITLE_LENGTH) {
+            title = title.substring(0, MAX_TITLE_LENGTH) + "…";
+        }
         return new MaterialDialog.Builder(getActivity())
-                .title(getArguments().getString("dialogTitle"))
+                .title(title)
                 .items(entries)
                 .itemsCallback(mContextMenuListener)
                 .build();

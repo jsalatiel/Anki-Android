@@ -18,6 +18,8 @@ package com.ichi2.anki;
  * this program.  If not, see <http://www.gnu.org/licenses/>.                           *
  ****************************************************************************************/
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -40,10 +42,13 @@ import android.view.MenuItem;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.ichi2.anim.ActivityTransitionAnimation;
 import com.ichi2.anki.exception.ConfirmModSchemaException;
+import com.ichi2.anki.receiver.ReminderReceiver;
 import com.ichi2.anki.receiver.SdCardReceiver;
+import com.ichi2.anki.services.ReminderService;
 import com.ichi2.async.DeckTask;
 import com.ichi2.libanki.Collection;
 import com.ichi2.preferences.StepsPreference;
+import com.ichi2.preferences.TimePreference;
 import com.ichi2.themes.StyledProgressDialog;
 import com.ichi2.themes.Themes;
 import com.ichi2.ui.AppCompatPreferenceActivity;
@@ -53,6 +58,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -73,13 +79,14 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
     private JSONObject mOptions;
     private JSONObject mDeck;
     private Collection mCol;
+    private boolean mPreferenceChanged = false;
 
     private BroadcastReceiver mUnmountReceiver = null;
 
     public class DeckPreferenceHack implements SharedPreferences {
 
-        private Map<String, String> mValues = new HashMap<String, String>();
-        private Map<String, String> mSummaries = new HashMap<String, String>();
+        private Map<String, String> mValues = new HashMap<>();
+        private Map<String, String> mSummaries = new HashMap<>();
         private MaterialDialog mProgressDialog;
 
 
@@ -101,7 +108,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                 mValues.put("maxAnswerTime", mOptions.getString("maxTaken"));
                 mValues.put("showAnswerTimer", Boolean.toString(mOptions.getInt("timer") == 1));
                 mValues.put("autoPlayAudio", Boolean.toString(mOptions.getBoolean("autoplay")));
-                mValues.put("replayQuestion", Boolean.toString(mOptions.getBoolean("replayq")));
+                mValues.put("replayQuestion", Boolean.toString(mOptions.optBoolean("replayq", true)));
                 // new
                 JSONObject newOptions = mOptions.getJSONObject("new");
                 mValues.put("newSteps", StepsPreference.convertFromJSON(newOptions.getJSONArray("delays")));
@@ -127,8 +134,18 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                 mValues.put("lapLeechAct", lapOptions.getString("leechAction"));
                 // options group management
                 mValues.put("currentConf", mCol.getDecks().getConf(mDeck.getLong("conf")).getString("name"));
+                // reminders
+                if (mOptions.has("reminder")) {
+                    final JSONObject reminder = mOptions.getJSONObject("reminder");
+                    final JSONArray reminderTime = reminder.getJSONArray("time");
+
+                    mValues.put("reminderEnabled", Boolean.toString(reminder.getBoolean("enabled")));
+                    mValues.put("reminderTime", String.format("%1$02d:%2$02d", reminderTime.get(0), reminderTime.get(1)));
+                } else {
+                    mValues.put("reminderEnabled", "false");
+                    mValues.put("reminderTime", TimePreference.DEFAULT_VALUE);
+                }
             } catch (JSONException e) {
-                addMissingValues();
                 finish();
             }
         }
@@ -157,7 +174,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                         Timber.i("Change value for key '" + key + "': " + value);
 
                         if (key.equals("maxAnswerTime")) {
-                            mOptions.put("maxTaken", (Integer) value);
+                            mOptions.put("maxTaken", value);
                         } else if (key.equals("newFactor")) {
                             mOptions.getJSONObject("new").put("initialFactor", (Integer) value * 10);
                         } else if (key.equals("newOrder")) {
@@ -171,33 +188,33 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                             }
                             mOptions.getJSONObject("new").put("order", Integer.parseInt((String) value));
                         } else if (key.equals("newPerDay")) {
-                            mOptions.getJSONObject("new").put("perDay", (Integer) value);
+                            mOptions.getJSONObject("new").put("perDay", value);
                         } else if (key.equals("newGradIvl")) {
                             JSONArray ja = new JSONArray(); // [graduating, easy]
-                            ja.put((Integer) value);
+                            ja.put(value);
                             ja.put(mOptions.getJSONObject("new").getJSONArray("ints").get(1));
                             mOptions.getJSONObject("new").put("ints", ja);
                         } else if (key.equals("newEasy")) {
                             JSONArray ja = new JSONArray(); // [graduating, easy]
                             ja.put(mOptions.getJSONObject("new").getJSONArray("ints").get(0));
-                            ja.put((Integer) value);
+                            ja.put(value);
                             mOptions.getJSONObject("new").put("ints", ja);
                         } else if (key.equals("newBury")) {
-                            mOptions.getJSONObject("new").put("bury", (Boolean) value);
+                            mOptions.getJSONObject("new").put("bury", value);
                         } else if (key.equals("revPerDay")) {
-                            mOptions.getJSONObject("rev").put("perDay", (Integer) value);
+                            mOptions.getJSONObject("rev").put("perDay", value);
                         } else if (key.equals("easyBonus")) {
                             mOptions.getJSONObject("rev").put("ease4", (Integer) value / 100.0f);
                         } else if (key.equals("revIvlFct")) {
                             mOptions.getJSONObject("rev").put("ivlFct", (Integer) value / 100.0f);
                         } else if (key.equals("revMaxIvl")) {
-                            mOptions.getJSONObject("rev").put("maxIvl", (Integer) value);
+                            mOptions.getJSONObject("rev").put("maxIvl", value);
                         } else if (key.equals("revBury")) {
-                            mOptions.getJSONObject("rev").put("bury", (Boolean) value);
+                            mOptions.getJSONObject("rev").put("bury", value);
                         } else if (key.equals("lapMinIvl")) {
-                            mOptions.getJSONObject("lapse").put("minInt", (Integer) value);
+                            mOptions.getJSONObject("lapse").put("minInt", value);
                         } else if (key.equals("lapLeechThres")) {
-                            mOptions.getJSONObject("lapse").put("leechFails", (Integer) value);
+                            mOptions.getJSONObject("lapse").put("leechFails", value);
                         } else if (key.equals("lapLeechAct")) {
                             mOptions.getJSONObject("lapse").put("leechAction", Integer.parseInt((String) value));
                         } else if (key.equals("lapNewIvl")) {
@@ -205,16 +222,11 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                         } else if (key.equals("showAnswerTimer")) {
                             mOptions.put("timer", (Boolean) value ? 1 : 0);
                         } else if (key.equals("autoPlayAudio")) {
-                            mOptions.put("autoplay", (Boolean) value);
+                            mOptions.put("autoplay", value);
                         } else if (key.equals("replayQuestion")) {
-                            mOptions.put("replayq", (Boolean) value);
-                        } else if (key.equals("name")) {
-                            if (!mCol.getDecks().rename(mDeck, (String) value)) {
-                                Themes.showThemedToast(DeckOptions.this,
-                                        getResources().getString(R.string.rename_error, mDeck.get("name")), false);
-                            }
+                            mOptions.put("replayq", value);
                         } else if (key.equals("desc")) {
-                            mDeck.put("desc", (String) value);
+                            mDeck.put("desc", value);
                             mCol.getDecks().save(mDeck);
                         } else if (key.equals("newSteps")) {
                             mOptions.getJSONObject("new").put("delays", StepsPreference.convertToJSON((String) value));
@@ -226,8 +238,6 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                             mOptions = mCol.getDecks().getConf(newConfId);
                             DeckTask.launchDeckTask(DeckTask.TASK_TYPE_CONF_CHANGE, mConfChangeHandler,
                                     new DeckTask.TaskData(new Object[] { mDeck, mOptions }));
-                            // Restart to reflect the new preference values
-                            restartActivity();
                         } else if (key.equals("confRename")) {
                             String newName = (String) value;
                             if (!TextUtils.isEmpty(newName)) {
@@ -249,7 +259,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                         } else if (key.equals("confRemove")) {
                             if (mOptions.getLong("id") == 1) {
                                 // Don't remove the options group if it's the default group
-                                Themes.showThemedToast(DeckOptions.this,
+                                UIUtils.showThemedToast(DeckOptions.this,
                                         getResources().getString(R.string.default_conf_delete_error), false);
                             } else {
                                 // Remove options group, handling the case where the user needs to confirm full sync
@@ -282,6 +292,76 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                                 DeckTask.launchDeckTask(DeckTask.TASK_TYPE_CONF_SET_SUBDECKS, mConfChangeHandler,
                                         new DeckTask.TaskData(new Object[] { mDeck, mOptions }));
                             }
+                        } else if (key.equals("reminderEnabled")) {
+                            final JSONObject reminder = new JSONObject();
+
+                            reminder.put("enabled", value);
+                            if (mOptions.has("reminder")) {
+                                reminder.put("time", mOptions.getJSONObject("reminder").getJSONArray("time"));
+                            } else {
+                                reminder.put("time", new JSONArray()
+                                        .put(TimePreference.parseHours(TimePreference.DEFAULT_VALUE))
+                                        .put(TimePreference.parseMinutes(TimePreference.DEFAULT_VALUE)));
+                            }
+
+                            mOptions.put("reminder", reminder);
+
+                            final AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                            final PendingIntent reminderIntent = PendingIntent.getBroadcast(
+                                    getApplicationContext(),
+                                    (int) mDeck.getLong("id"),
+                                    new Intent(getApplicationContext(), ReminderReceiver.class).putExtra
+                                            (ReminderService.EXTRA_DECK_ID, mDeck.getLong("id")),
+                                    0
+                            );
+
+                            alarmManager.cancel(reminderIntent);
+                            if ((Boolean) value) {
+                                final Calendar calendar = Calendar.getInstance();
+
+                                calendar.set(Calendar.HOUR_OF_DAY, reminder.getJSONArray("time").getInt(0));
+                                calendar.set(Calendar.MINUTE, reminder.getJSONArray("time").getInt(1));
+                                calendar.set(Calendar.SECOND, 0);
+
+                                alarmManager.setInexactRepeating(
+                                        AlarmManager.RTC_WAKEUP,
+                                        calendar.getTimeInMillis(),
+                                        AlarmManager.INTERVAL_DAY,
+                                        reminderIntent
+                                );
+                            }
+                        } else if (key.equals("reminderTime")) {
+                            final JSONObject reminder = new JSONObject();
+
+                            reminder.put("enabled", true);
+                            reminder.put("time", new JSONArray().put(TimePreference.parseHours((String) value))
+                                    .put(TimePreference.parseMinutes((String) value)));
+
+                            mOptions.put("reminder", reminder);
+
+                            final AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                            final PendingIntent reminderIntent = PendingIntent.getBroadcast(
+                                    getApplicationContext(),
+                                    (int) mDeck.getLong("id"),
+                                    new Intent(getApplicationContext(), ReminderReceiver.class).putExtra
+                                            (ReminderService.EXTRA_DECK_ID, mDeck.getLong("id")),
+                                    0
+                            );
+
+                            alarmManager.cancel(reminderIntent);
+
+                            final Calendar calendar = Calendar.getInstance();
+
+                            calendar.set(Calendar.HOUR_OF_DAY, reminder.getJSONArray("time").getInt(0));
+                            calendar.set(Calendar.MINUTE, reminder.getJSONArray("time").getInt(1));
+                            calendar.set(Calendar.SECOND, 0);
+
+                            alarmManager.setInexactRepeating(
+                                    AlarmManager.RTC_WAKEUP,
+                                    calendar.getTimeInMillis(),
+                                    AlarmManager.INTERVAL_DAY,
+                                    reminderIntent
+                            );
                         }
                     }
                 } catch (JSONException e) {
@@ -386,6 +466,8 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
                     buildLists();
                     updateSummaries();
                     mProgressDialog.dismiss();
+                    // Restart to reflect the new preference values
+                    restartActivity();
                 }
 
 
@@ -466,7 +548,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
             return mValues.get(key);
         }
 
-        public List<OnSharedPreferenceChangeListener> listeners = new LinkedList<OnSharedPreferenceChangeListener>();
+        public List<OnSharedPreferenceChangeListener> listeners = new LinkedList<>();
 
 
         @Override
@@ -549,7 +631,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                finish();
+                closeWithResult();
                 return true;
         }
         return false;
@@ -559,6 +641,7 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         // update values on changed preference
+        mPreferenceChanged = true;
         this.updateSummaries();
     }
 
@@ -583,11 +666,20 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             Timber.i("DeckOptions - onBackPressed()");
-            finish();
-            ActivityTransitionAnimation.slide(this, ActivityTransitionAnimation.FADE);
+            closeWithResult();
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void closeWithResult() {
+        if (mPreferenceChanged) {
+            setResult(RESULT_OK);
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
+        ActivityTransitionAnimation.slide(this, ActivityTransitionAnimation.FADE);
     }
 
 
@@ -764,21 +856,6 @@ public class DeckOptions extends AppCompatPreferenceActivity implements OnShared
             IntentFilter iFilter = new IntentFilter();
             iFilter.addAction(SdCardReceiver.MEDIA_EJECT);
             registerReceiver(mUnmountReceiver, iFilter);
-        }
-    }
-
-
-    private void addMissingValues() {
-        try {
-            for (JSONObject o : mCol.getDecks().all()) {
-                JSONObject conf = mCol.getDecks().confForDid(o.getLong("id"));
-                if (!conf.has("replayq")) {
-                    conf.put("replayq", true);
-                    mCol.getDecks().save(conf);
-                }
-            }
-        } catch (JSONException e1) {
-            // nothing
         }
     }
 

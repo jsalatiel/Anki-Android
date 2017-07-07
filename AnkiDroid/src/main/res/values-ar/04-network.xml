@@ -45,26 +45,26 @@
   <string name="vague_error">Error</string>
   <string name="retry">إعادة المحاولة</string>
   <string name="cancel">إلغاء</string>
-  <string name="loading_shared_decks">تحميل الرزم المشاركة المتاحة...</string>
   <string name="terms_and_conditions"><a href="https://ankiweb.net/account/terms">Terms and conditions</a></string>
   <string name="menu_get_shared_decks">احصل على رزم مشاركة</string>
   <string name="connection_error_message">حدث خطأ في شبكة الاتصال.</string>
   <string name="not_logged_in_title">Log in to AnkiWeb</string>
-  <string name="login_create_account_message">You must log in to an AnkiWeb account. You can create one in the next step.</string>
-  <string name="no_email_client">No email client available</string>
+  <string name="login_create_account_message">You must log in to a third party account to use the cloud sync service. You can create one in the next step.</string>
+  <!-- MyAccount.java -->
   <string name="username">Email address</string>
   <string name="username_repeat">Repeat email address</string>
   <string name="password">كلمة المرور</string>
   <string name="password_repeat">تكرار كلمة السر</string>
   <string name="log_in">تسجيل الدخول</string>
   <string name="sign_up_description">ألا تملك حساب أنكي ويب؟ إنه مجاني</string>
+  <string name="sign_up_not_affiliated">Note: AnkiWeb is not affiliated with AnkiDroid</string>
   <string name="sign_up">التسجيل</string>
-  <string name="sign_up_terms">By touching <i>Sign up</i>, you confirm that you have read and agree to our <a href="https://ankiweb.net/account/terms">terms of use</a>.</string>
   <string name="logged_as">تسجيل</string>
   <string name="log_out">تسجيل الخروج</string>
   <string name="alert_logging_message">تسجيل الدخول، الرجاء الانتظار...</string>
   <string name="invalid_username_password">Invalid email address or password</string>
   <string name="reset_password">Reset password</string>
+  <!-- AndroidManifest.xml -->
   <string name="downloaddeck_search">بحث</string>
   <string name="preferences_title">تفضيلات</string>
   <string name="deckpreferences_title">Options for XXX</string>
@@ -114,11 +114,7 @@
   <string name="sync_sanity_failed">After syncing, the collection was in an inconsistent state. To fix this problem, AnkiDroid will force a full sync. Choose which side you would like to keep.</string>
   <string name="sync_media_sanity_failed">اكتملت مزامنة الوسائط، ولكن  عدد الوسائط لا يتوافق مع الخادم. مزامنة الوسائط القادمة ستكون شاملة لتصحيح أي خطأ.</string>
   <string name="sync_media_error">الخطأ في مزامنة معلومات الوسائط.</string>
-  <string name="sync_media_unsupported">Complex media file names aren’t supported on Android 2.2 and below. Media syncing has been disabled.</string>
-  <string name="register_error">حدث خطأ. الرجاء المحاولة مرة أخرى لاحقاً.</string>
-  <string name="register_title">تسجيل حساب</string>
-  <string name="register_mismatch">تكرار اسم المستخدم/كلمة المرور غير متطابق أو فارغة. الرجاء إعادة إدخال.</string>
-  <string name="registering_message">إنشاء حساب.\n يرجى الانتظار...</string>
+  <string name="sync_media_error_check">Error while syncing media. A media check is recommended.</string>
   <string name="sync_sanity_local">Local</string>
   <string name="sync_sanity_remote">Remote</string>
   <string name="force_full_sync_title">Force full sync</string>

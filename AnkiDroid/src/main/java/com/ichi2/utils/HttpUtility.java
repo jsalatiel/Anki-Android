@@ -3,11 +3,8 @@ package com.ichi2.utils;
 
 
 
-import com.ichi2.anki.AnkiDroidApp;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -37,8 +34,6 @@ public class HttpUtility {
                     Timber.e("%d: %s", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
                     break;
             }
-        } catch (ClientProtocolException ex) {
-            Timber.e(ex.toString());
         } catch (IOException ex) {
             Timber.e(ex.toString());
         }

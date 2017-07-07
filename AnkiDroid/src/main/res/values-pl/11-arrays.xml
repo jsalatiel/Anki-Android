@@ -50,16 +50,16 @@
     <item>Zalecana odpowiedź (zielony)</item>
     <item>Odpowiedź lepsza niż zalecana</item>
     <item>Cofnij</item>
-    <item>Edit note</item>
-    <item>Mark note</item>
+    <item>Edytuj notatkę</item>
+    <item>Wyróżnij notatkę</item>
     <item>Wyszukaj wyrażenie</item>
     <item>Ukryj kartę</item>
     <item>Wstrzymaj kartę</item>
-    <item>Delete note</item>
+    <item>Usuń notatkę</item>
     <item>Odtwórz plik multimedialny</item>
     <item>Przerwij naukę</item>
-    <item>Bury note</item>
-    <item>Suspend note</item>
+    <item>Zakop notatkę</item>
+    <item>Zawieś notatkę</item>
   </string-array>
   <string-array name="leech_action_labels">
     <item>Zawieś kartę</item>
@@ -78,16 +78,7 @@
     <item>W kolejności dodania</item>
     <item>W kolejności do przejrzenia</item>
     <item>Ostatnio dodane na początku</item>
-    <item>Relative overdueness</item>
-  </string-array>
-  <string-array name="custom_study_options_labels">
-    <item>Zwiększ dzisiejszy limit nowych kart</item>
-    <item>Zwiększ dzisiejszy limit przeglądanych kart</item>
-    <item>Przejrzyj zapomniane karty</item>
-    <item>Przejrzyj z wyprzedzeniem</item>
-    <item>Ucz się losowo wybranych kart</item>
-    <item>Przejrzyj nowe karty</item>
-    <item>Ogranicz do poszczególnych tagów</item>
+    <item>Względne zaległości</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Użyj obecnej talii</item>
@@ -101,5 +92,13 @@
   <string-array name="override_font_labels">
     <item>Kiedy żaden font nie jest wybrany dla danych kart</item>
     <item>Zawsze</item>
+  </string-array>
+  <string-array name="day_theme_labels">
+    <item>Jasny</item>
+    <item>Zwykły</item>
+  </string-array>
+  <string-array name="night_theme_labels">
+    <item>Czarny</item>
+    <item>Ciemny</item>
   </string-array>
 </resources>

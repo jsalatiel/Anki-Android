@@ -1,5 +1,6 @@
 /***************************************************************************************
  * Copyright (c) 2011 Norbert Nagold <norbert.nagold@gmail.com>                         *
+ * Copyright (c) 2015 Timothy Rae <perceptualchaos2@gmail.com>                          *
  *                                                                                      *
  * This program is free software; you can redistribute it and/or modify it under        *
  * the terms of the GNU General Public License as published by the Free Software        *
@@ -18,6 +19,9 @@ package com.ichi2.themes;
 
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.TypedArray;
+import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 
 import com.ichi2.anki.AnkiDroidApp;
@@ -28,23 +32,104 @@ public class Themes {
     public final static int ALPHA_ICON_DISABLED_LIGHT = 76; // 31%
     public final static int ALPHA_ICON_ENABLED_DARK = 138; // 54%
 
-    public static void showThemedToast(Context context, String text, boolean shortLength) {
-        Toast.makeText(context, text, shortLength ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
-    }
+    // Day themes
+    private final static int THEME_DAY_LIGHT = 0;
+    private final static int THEME_DAY_PLAIN = 1;
+    // Night themes
+    private final static int THEME_NIGHT_BLACK = 0;
+    private final static int THEME_NIGHT_DARK = 1;
+
 
     public static void setTheme(Context context) {
-        if (AnkiDroidApp.getSharedPrefs(context.getApplicationContext()).getBoolean("invertedColors", false)) {
-            context.setTheme(R.style.App_Theme_Dark);
+        SharedPreferences prefs = AnkiDroidApp.getSharedPrefs(context.getApplicationContext());
+        if (prefs.getBoolean("invertedColors", false)) {
+            int theme = Integer.parseInt(prefs.getString("nightTheme", "0"));
+            switch (theme) {
+                case THEME_NIGHT_DARK:
+                    context.setTheme(R.style.Theme_Dark_Compat);
+                    break;
+                case THEME_NIGHT_BLACK:
+                    context.setTheme(R.style.Theme_Black_Compat);
+                    break;
+            }
         } else {
-            context.setTheme(R.style.App_Theme_White);
+            int theme = Integer.parseInt(prefs.getString("dayTheme", "0"));
+            switch (theme) {
+                case THEME_DAY_LIGHT:
+                    context.setTheme(R.style.Theme_Light_Compat);
+                    break;
+                case THEME_DAY_PLAIN:
+                    context.setTheme(R.style.Theme_Plain_Compat);
+                    break;
+            }
         }
     }
 
     public static void setThemeLegacy(Context context) {
-        if (AnkiDroidApp.getSharedPrefs(context.getApplicationContext()).getBoolean("invertedColors", false)) {
-            context.setTheme(R.style.LegacyActionBarDark);
+        SharedPreferences prefs = AnkiDroidApp.getSharedPrefs(context.getApplicationContext());
+        if (prefs.getBoolean("invertedColors", false)) {
+            int theme = Integer.parseInt(prefs.getString("nightTheme", "0"));
+            switch (theme) {
+                case THEME_NIGHT_DARK:
+                    context.setTheme(R.style.LegacyActionBarDark);
+                    break;
+                case THEME_NIGHT_BLACK:
+                    context.setTheme(R.style.LegacyActionBarBlack);
+                    break;
+            }
         } else {
-            context.setTheme(R.style.LegacyActionBarWhite);
+            int theme = Integer.parseInt(prefs.getString("dayTheme", "0"));
+            switch (theme) {
+                case THEME_DAY_LIGHT:
+                    context.setTheme(R.style.LegacyActionBarLight);
+                    break;
+                case THEME_DAY_PLAIN:
+                    context.setTheme(R.style.LegacyActionBarPlain);
+                    break;
+            }
+        }
+    }
+
+
+    public static int getResFromAttr(Context context, int resAttr) {
+        int[] attrs = new int[] {resAttr};
+        return getResFromAttr(context, attrs)[0];
+    }
+
+    public static int[] getResFromAttr(Context context, int[] attrs) {
+        TypedArray ta = context.obtainStyledAttributes(attrs);
+        for (int i = 0; i < attrs.length; i++) {
+            attrs[i] = ta.getResourceId(i, 0);
+        }
+        ta.recycle();
+        return attrs;
+    }
+
+    public static int getColorFromAttr(Context context, int colorAttr) {
+        int[] attrs = new int[] {colorAttr};
+        return getColorFromAttr(context, attrs)[0];
+    }
+
+
+    public static int[] getColorFromAttr(Context context, int[] attrs) {
+        TypedArray ta = context.obtainStyledAttributes(attrs);
+        for (int i = 0; i < attrs.length; i++) {
+            attrs[i] = ta.getColor(i, ContextCompat.getColor(context, R.color.white));
+        }
+        ta.recycle();
+        return attrs;
+    }
+
+    /**
+     * Return the current integer code of the theme being used, taking into account
+     * whether we are in day mode or night mode.
+     */
+    public static int getCurrentTheme(Context context) {
+        SharedPreferences prefs = AnkiDroidApp.getSharedPrefs(context);
+        if (prefs.getBoolean("invertedColors", false)) {
+            return Integer.parseInt(prefs.getString("nightTheme", "0"));
+        } else {
+            return Integer.parseInt(prefs.getString("dayTheme", "0"));
         }
     }
 }

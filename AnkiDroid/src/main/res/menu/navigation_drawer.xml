@@ -1,6 +1,7 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <group android:id="@+id/group1"
-            android:checkableBehavior="single">
+        android:checkableBehavior="single">
         <item
             android:id="@+id/nav_decks"
             android:icon="@drawable/ic_list_black_24dp"
@@ -17,7 +18,8 @@
     <group  android:id="@+id/group2">
         <item
             android:id="@+id/nav_night_mode"
-            android:icon="@drawable/ic_check_box_outline_blank_black_24dp"
+            android:icon="@drawable/ic_brightness_3_black_24dp"
+            app:actionLayout="@layout/night_mode_switch"
             android:title="@string/night_mode"/>
         <item
             android:id="@+id/nav_settings"
@@ -29,7 +31,7 @@
             android:title="@string/help"/>
         <item
             android:id="@+id/nav_feedback"
-            android:icon="@drawable/ic_mail_black_24dp"
-            android:title="@string/send_feedback"/>    
+            android:icon="@drawable/ic_feedback_black_24dp"
+            android:title="@string/send_feedback"/>
     </group>
 </menu>

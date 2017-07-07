@@ -24,12 +24,11 @@ import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.ichi2.anki.NavigationDrawerActivity;
-import com.ichi2.anki.Statistics;
 import com.ichi2.anki.R;
+import com.ichi2.anki.Statistics;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Stats;
-import com.ichi2.libanki.Utils;
+import com.ichi2.themes.Themes;
 import com.wildplot.android.rendering.PlotSheet;
 
 import java.io.UnsupportedEncodingException;
@@ -45,24 +44,18 @@ public class AnkiStatsTaskHandler {
 
     private Collection mCollectionData;
     private float mStandardTextSize = 10f;
-    private int mStatType = Stats.TYPE_MONTH;
-
-    private static long sSelectedDeckId;
+    private Stats.AxisType mStatType = Stats.AxisType.TYPE_MONTH;
+    private boolean mIsWholeCollection = false;
     private static Lock sLock = new ReentrantLock();
 
 
     public AnkiStatsTaskHandler(Collection collection){
         sInstance = this;
         mCollectionData = collection;
-        sSelectedDeckId = mCollectionData.getDecks().selected();
     }
 
-    public static long getSelectedDeckId() {
-        return sSelectedDeckId;
-    }
-
-    public static void setsSelectedDeckId(long sSelectedDeckId) {
-        AnkiStatsTaskHandler.sSelectedDeckId = sSelectedDeckId;
+    public void setIsWholeCollection(boolean wholeCollection) {
+        mIsWholeCollection = wholeCollection;
     }
 
     public static AnkiStatsTaskHandler getInstance() {
@@ -79,21 +72,10 @@ public class AnkiStatsTaskHandler {
         createChartTask.execute(views);
         return createChartTask;
     }
-    public static CreateSmallTodayOverview createSmallTodayOverview(Collection col, TextView view){
-        CreateSmallTodayOverview createSmallTodayOverview = new CreateSmallTodayOverview();
-        createSmallTodayOverview.execute(col, view);
-        return createSmallTodayOverview;
-    }
-    public static CreateSmallDueChart createSmallDueChartChart(Collection col, double[][] seriesList, View... views){
-        CreateSmallDueChart createChartTask = new CreateSmallDueChart(col, seriesList);
-        createChartTask.execute(views);
-        return createChartTask;
-    }
-
-    public static CreateFirstStatisticChooserTask createFirstStatisticChooserTask(Collection col, ViewPager viewPager){
-        CreateFirstStatisticChooserTask createFirstStatisticChooserTask = new CreateFirstStatisticChooserTask();
-        createFirstStatisticChooserTask.execute(col, viewPager);
-        return createFirstStatisticChooserTask;
+    public static DeckPreviewStatistics createReviewSummaryStatistics(Collection col, TextView view){
+        DeckPreviewStatistics deckPreviewStatistics = new DeckPreviewStatistics();
+        deckPreviewStatistics.execute(col, view);
+        return deckPreviewStatistics;
     }
 
     private class CreateChartTask extends AsyncTask<View, Void, PlotSheet>{
@@ -116,16 +98,17 @@ public class AnkiStatsTaskHandler {
             sLock.lock();
             try {
                 if (!mIsRunning) {
-                    Timber.d("quiting CreateChartTask (%s) before execution", mChartType.name());
+                    Timber.d("Quitting CreateChartTask (%s) before execution", mChartType.name());
                     return null;
-                } else
-                    Timber.d("starting Create ChartTask, type: %s", mChartType.name());
+                } else {
+                    Timber.d("Starting CreateChartTask, type: %s", mChartType.name());
+                }
                 mImageView = (ChartView) params[0];
                 mProgressBar = (ProgressBar) params[1];
                 ChartBuilder chartBuilder = new ChartBuilder(mImageView, mCollectionData,
-                        NavigationDrawerActivity.isWholeCollection(), mChartType);
+                        mIsWholeCollection, mChartType);
                 return chartBuilder.renderChart(mStatType);
-            }finally {
+            } finally {
                 sLock.unlock();
             }
         }
@@ -137,68 +120,15 @@ public class AnkiStatsTaskHandler {
 
         @Override
         protected void onPostExecute(PlotSheet plotSheet) {
-            if(plotSheet != null && mIsRunning){
-
+            if (plotSheet != null && mIsRunning) {
                 mImageView.setData(plotSheet);
                 mProgressBar.setVisibility(View.GONE);
                 mImageView.setVisibility(View.VISIBLE);
                 mImageView.invalidate();
-
             }
         }
-
     }
-    private static class CreateSmallDueChart extends AsyncTask<View, Void, PlotSheet>{
-        private ChartView mImageView;
-        private double[][] mSeriesList;
-        private boolean mIsRunning = false;
-        private Collection mCollection;
 
-
-        public CreateSmallDueChart(Collection col, double[][] seriesList){
-            super();
-            mIsRunning = true;
-            mSeriesList = seriesList;
-            mCollection = col;
-        }
-
-        @Override
-        protected PlotSheet doInBackground(View... params) {
-            //make sure only one task of CreateChartTask is running, first to run should get sLock
-            //only necessary on lower APIs because after honeycomb only one thread is used for all asynctasks
-            sLock.lock();
-            try {
-                if (!mIsRunning) {
-                    Timber.d("quiting CreateSmallDueChart before execution");
-                    return null;
-                } else
-                    Timber.d("starting CreateSmallDueChart");
-                mImageView = (ChartView) params[0];
-                ChartBuilder chartBuilder = new ChartBuilder(mImageView, mCollection,
-                        NavigationDrawerActivity.isWholeCollection(), Stats.ChartType.OTHER);
-                return chartBuilder.createSmallDueChart(mSeriesList);
-            }finally {
-                sLock.unlock();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mIsRunning = false;
-        }
-
-        @Override
-        protected void onPostExecute(PlotSheet plotSheet) {
-            if(plotSheet != null && mIsRunning){
-
-                mImageView.setData(plotSheet);
-                mImageView.setVisibility(View.VISIBLE);
-                mImageView.invalidate();
-                Timber.d("finished CreateSmallDueChart");
-            }
-        }
-
-    }
     private class CreateStatisticsOverview extends AsyncTask<View, Void, String>{
         private WebView mWebView;
         private ProgressBar mProgressBar;
@@ -217,18 +147,16 @@ public class AnkiStatsTaskHandler {
             sLock.lock();
             try {
                 if (!mIsRunning) {
-                    Timber.d("quiting CreateStatisticsOverview before execution");
+                    Timber.d("Quitting CreateStatisticsOverview before execution");
                     return null;
-                } else
-                    Timber.d("starting CreateStatisticsOverview" );
+                } else {
+                    Timber.d("Starting CreateStatisticsOverview");
+                }
                 mWebView = (WebView) params[0];
                 mProgressBar = (ProgressBar) params[1];
-                String html = "";
-                InfoStatsBuilder infoStatsBuilder = new InfoStatsBuilder(mWebView, mCollectionData,
-                        NavigationDrawerActivity.isWholeCollection());
-                html = infoStatsBuilder.createInfoHtmlString();
-                return html;
-            }finally {
+                OverviewStatsBuilder overviewStatsBuilder = new OverviewStatsBuilder(mWebView, mCollectionData, mIsWholeCollection, mStatType);
+                return overviewStatsBuilder.createInfoHtmlString();
+            } finally {
                 sLock.unlock();
             }
         }
@@ -240,28 +168,27 @@ public class AnkiStatsTaskHandler {
 
         @Override
         protected void onPostExecute(String html) {
-            if(html != null && mIsRunning){
-
+            if (html != null && mIsRunning) {
                 try {
-                    mWebView.loadData(URLEncoder.encode(html, "UTF-8").replaceAll("\\+"," "), "text/html; charset=utf-8",  "utf-8");
+                    mWebView.loadData(URLEncoder.encode(html, "UTF-8").replaceAll("\\+", " "), "text/html; charset=utf-8", "utf-8");
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
                 mProgressBar.setVisibility(View.GONE);
+                int backgroundColor = Themes.getColorFromAttr(mWebView.getContext(), android.R.attr.colorBackground);
+                mWebView.setBackgroundColor(backgroundColor);
                 mWebView.setVisibility(View.VISIBLE);
                 mWebView.invalidate();
-
             }
         }
-
     }
 
-    private static class CreateSmallTodayOverview extends AsyncTask<Object, Void, String>{
+    private static class DeckPreviewStatistics extends AsyncTask<Object, Void, String> {
         private TextView mTextView;
 
         private boolean mIsRunning = false;
 
-        public CreateSmallTodayOverview(){
+        public DeckPreviewStatistics() {
             super();
             mIsRunning = true;
         }
@@ -274,18 +201,19 @@ public class AnkiStatsTaskHandler {
             try {
                 Collection collection = (Collection) params[0];
                 if (!mIsRunning || collection == null || collection.getDb() == null) {
-                    Timber.d("quiting CreateSmallTodayOverview before execution");
+                    Timber.d("Quitting DeckPreviewStatistics before execution");
                     return null;
-                } else
-                    Timber.d("starting CreateSmallTodayOverview" );
+                } else {
+                    Timber.d("Starting DeckPreviewStatistics");
+                }
                 mTextView = (TextView) params[1];
 
                 //eventually put this in Stats (in desktop it is not though)
                 int cards;
                 int minutes;
                 Cursor cur = null;
-                String query = "select count(), sum(time)/1000 from revlog where id > " + ((collection.getSched().getDayCutoff()-86400)*1000);
-                Timber.d("CreateSmallTodayOverview query: " + query);
+                String query = "select count(), sum(time)/1000 from revlog where id > " + ((collection.getSched().getDayCutoff() - 86400) * 1000);
+                Timber.d("DeckPreviewStatistics query: " + query);
 
                 try {
                     cur = collection.getDb()
@@ -294,16 +222,16 @@ public class AnkiStatsTaskHandler {
 
                     cur.moveToFirst();
                     cards = cur.getInt(0);
-                    minutes = (int) Math.round(cur.getInt(1)/60.0);
+                    minutes = (int) Math.round(cur.getInt(1) / 60.0);
                 } finally {
                     if (cur != null && !cur.isClosed()) {
                         cur.close();
                     }
                 }
-                Resources res = mTextView.getResources();
+                Resources res = collection.getContext().getResources();
                 final String span = res.getQuantityString(R.plurals.time_span_minutes, minutes, minutes);
                 return res.getQuantityString(R.plurals.studied_cards_today, cards, cards, span);
-            }finally {
+            } finally {
                 sLock.unlock();
             }
         }
@@ -315,97 +243,29 @@ public class AnkiStatsTaskHandler {
 
         @Override
         protected void onPostExecute(String todayStatString) {
-            if(todayStatString != null && mIsRunning){
+            if (todayStatString != null && mIsRunning) {
                 mTextView.setText(todayStatString);
                 mTextView.setVisibility(View.VISIBLE);
                 mTextView.invalidate();
             }
         }
-
     }
 
-    private static class CreateFirstStatisticChooserTask extends AsyncTask<Object, Void, Integer>{
-        private ViewPager mViewPager;
-
-        private boolean mIsRunning = false;
-
-        public CreateFirstStatisticChooserTask(){
-            super();
-            mIsRunning = true;
-        }
-
-        @Override
-        protected Integer doInBackground(Object... params) {
-            //make sure only one task of CreateChartTask is running, first to run should get sLock
-            //only necessary on lower APIs because after honeycomb only one thread is used for all asynctasks
-            sLock.lock();
-            try {
-                Collection collection = (Collection) params[0];
-                if (!mIsRunning || collection == null || collection.getDb() == null) {
-                    Timber.d("quiting CreateTodayLearnCountOnly before execution");
-                    return null;
-                } else
-                    Timber.d("starting CreateTodayLearnCountOnly" );
-                mViewPager = (ViewPager) params[1];
-
-                //eventually put this in Stats (in desktop it is not though)
-                int cards;
-                Cursor cur = null;
-                String query = "select count() from revlog where id > " + ((collection.getSched().getDayCutoff()-86400)*1000);
-                Timber.d("CreateSmallTodayOverview query: " + query);
-
-                try {
-                    cur = collection.getDb()
-                            .getDatabase()
-                            .rawQuery(query, null);
-
-                    cur.moveToFirst();
-                    cards = cur.getInt(0);
-
-
-
-                } finally {
-                    if (cur != null && !cur.isClosed()) {
-                        cur.close();
-                    }
-                }
-                return cards;
-            }finally {
-                sLock.unlock();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mIsRunning = false;
-        }
-
-        @Override
-        protected void onPostExecute(Integer todayStatString) {
-            if(todayStatString != null && mIsRunning && mViewPager != null){
-                int chosen = todayStatString;
-                switch (chosen){
-                    case 0:
-                        mViewPager.setCurrentItem(Statistics.FORECAST_TAB_POSITION);
-                }
-            }
-        }
-
-    }
 
 
     public float getmStandardTextSize() {
         return mStandardTextSize;
     }
+
     public void setmStandardTextSize(float mStandardTextSize) {
         this.mStandardTextSize = mStandardTextSize;
     }
 
-    public int getStatType() {
+    public Stats.AxisType getStatType() {
         return mStatType;
     }
 
-    public void setStatType(int mStatType) {
+    public void setStatType(Stats.AxisType mStatType) {
         this.mStatType = mStatType;
     }
 

@@ -2,7 +2,6 @@
 package com.ichi2.anki.dialogs;
 
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Message;
 import android.view.View;
@@ -10,11 +9,10 @@ import android.view.View;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import com.ichi2.anki.AnkiActivity;
-import com.ichi2.anki.AnkiDatabaseManager;
 import com.ichi2.anki.BackupManager;
 import com.ichi2.anki.CollectionHelper;
+import com.ichi2.anki.DeckPicker;
 import com.ichi2.anki.R;
-import com.ichi2.themes.Themes;
 import com.ichi2.compat.CompatHelper;
 
 import java.io.File;
@@ -35,40 +33,10 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
     public static final int DIALOG_CONFIRM_DATABASE_CHECK = 6;
     public static final int DIALOG_CONFIRM_RESTORE_BACKUP = 7;
     public static final int DIALOG_FULL_SYNC_FROM_SERVER = 8;
+    public static final int DIALOG_CURSOR_SIZE_LIMIT_EXCEEDED = 9;
 
     // public flag which lets us distinguish between inaccessible and corrupt database
     public static boolean databaseCorruptFlag = false;
-
-    public interface DatabaseErrorDialogListener {
-        public void showDatabaseErrorDialog(int dialogType);
-
-
-        public void sendErrorReport();
-
-
-        public boolean hasErrorFiles();
-
-
-        public void startLoadingCollection();
-
-
-        public void repairDeck();
-
-
-        public void restoreFromBackup(String backupPath);
-
-
-        public void integrityCheck();
-
-
-        public void sync(String conflict);
-
-
-        public void exit();
-
-
-        public void dismissAllDialogFragments();
-    }
 
 
     /**
@@ -97,13 +65,12 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
         boolean sqliteInstalled = false;
         try {
             sqliteInstalled = Runtime.getRuntime().exec("sqlite3 --version").waitFor() == 0;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
         switch (mType) {
+            case DIALOG_CURSOR_SIZE_LIMIT_EXCEEDED:
             case DIALOG_LOAD_FAILED:
                 // Collection failed to load; give user the option of either choosing from repair options, or closing
                 // the activity
@@ -115,13 +82,13 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity())
+                                ((DeckPicker) getActivity())
                                         .showDatabaseErrorDialog(DIALOG_ERROR_HANDLING);
                             }
 
                             @Override
                             public void onNegative(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity()).exit();
+                                ((DeckPicker) getActivity()).exit();
                             }
                         })
                         .show();
@@ -139,31 +106,31 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity())
+                                ((DeckPicker) getActivity())
                                         .showDatabaseErrorDialog(DIALOG_ERROR_HANDLING);
                             }
 
                             @Override
                             public void onNegative(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity()).sendErrorReport();
+                                ((DeckPicker) getActivity()).sendErrorReport();
                                 dismissAllDialogFragments();
                             }
 
                             @Override
                             public void onNeutral(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity()).exit();
+                                ((DeckPicker) getActivity()).exit();
                             }
                         })
                         .show();
                 dialog.getCustomView().findViewById(R.id.buttonDefaultNegative).setEnabled(
-                        ((DatabaseErrorDialogListener) getActivity()).hasErrorFiles());
+                        ((DeckPicker) getActivity()).hasErrorFiles());
                 return dialog;
 
             case DIALOG_ERROR_HANDLING:
                 // The user has asked to see repair options; allow them to choose one of the repair options or go back
                 // to the previous dialog
-                ArrayList<String> options = new ArrayList<String>();
-                ArrayList<Integer> values = new ArrayList<Integer>();
+                ArrayList<String> options = new ArrayList<>();
+                ArrayList<Integer> values = new ArrayList<>();
                 if (!((AnkiActivity)getActivity()).colIsOpen()) {
                     // retry
                     options.add(res.getString(R.string.backup_retry_opening));
@@ -204,26 +171,26 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                                     CharSequence charSequence) {
                                 switch (mRepairValues[which]) {
                                     case 0:
-                                        ((DatabaseErrorDialogListener) getActivity()).startLoadingCollection();
+                                        ((DeckPicker) getActivity()).restartActivity();
                                         return;
                                     case 1:
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .showDatabaseErrorDialog(DIALOG_CONFIRM_DATABASE_CHECK);
                                         return;
                                     case 2:
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .showDatabaseErrorDialog(DIALOG_REPAIR_COLLECTION);
                                         return;
                                     case 3:
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .showDatabaseErrorDialog(DIALOG_RESTORE_BACKUP);
                                         return;
                                     case 4:
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .showDatabaseErrorDialog(DIALOG_FULL_SYNC_FROM_SERVER);
                                         return;
                                     case 5:
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .showDatabaseErrorDialog(DIALOG_NEW_COLLECTION);
                                 }
                             }
@@ -240,7 +207,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity()).repairDeck();
+                                ((DeckPicker) getActivity()).repairDeck();
                                 dismissAllDialogFragments();
                             }
                         })
@@ -261,7 +228,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                             .callback(new MaterialDialog.ButtonCallback() {
                                 @Override
                                 public void onPositive(MaterialDialog dialog) {
-                                    ((DatabaseErrorDialogListener) getActivity())
+                                    ((DeckPicker) getActivity())
                                             .showDatabaseErrorDialog(DIALOG_ERROR_HANDLING);
                                 }
                             });
@@ -287,7 +254,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                                         int which, CharSequence charSequence) {
                                     if (mBackups[which].length() > 0) {
                                         // restore the backup if it's valid
-                                        ((DatabaseErrorDialogListener) getActivity())
+                                        ((DeckPicker) getActivity())
                                                 .restoreFromBackup(mBackups[which]
                                                         .getPath());
                                         dismissAllDialogFragments();
@@ -314,15 +281,12 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
                                 CollectionHelper.getInstance().closeCollection(false);
-                                String path = CollectionHelper.getInstance().getCollectionPath(getActivity());
-                                AnkiDatabaseManager.closeDatabase(path);
+                                String path = CollectionHelper.getCollectionPath(getActivity());
                                 if (BackupManager.moveDatabaseToBrokenFolder(path, false)) {
-                                    ((DatabaseErrorDialogListener) getActivity()).startLoadingCollection();
+                                    ((DeckPicker) getActivity()).restartActivity();
                                 } else {
-                                    ((DatabaseErrorDialogListener) getActivity())
-                                            .showDatabaseErrorDialog(DIALOG_ERROR_HANDLING);
+                                    ((DeckPicker) getActivity()).showDatabaseErrorDialog(DIALOG_LOAD_FAILED);
                                 }
-                                dismissAllDialogFragments();
                             }
                         })
                         .show();
@@ -335,7 +299,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity()).integrityCheck();
+                                ((DeckPicker) getActivity()).integrityCheck();
                                 dismissAllDialogFragments();
                             }
                         })
@@ -349,7 +313,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                ((DatabaseErrorDialogListener) getActivity())
+                                ((DeckPicker) getActivity())
                                         .showDatabaseErrorDialog(DIALOG_RESTORE_BACKUP);
                             }
                         })
@@ -363,8 +327,7 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                         .callback(new MaterialDialog.ButtonCallback() {
                             @Override
                             public void onPositive(MaterialDialog dialog) {
-                                DatabaseErrorDialogListener activity = (DatabaseErrorDialogListener) getActivity();
-                                activity.sync("download");
+                                ((DeckPicker) getActivity()).sync("download");
                                 dismissAllDialogFragments();
                             }
                         })
@@ -392,7 +355,6 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                     // Generic message shown when a libanki task failed
                     return res().getString(R.string.access_collection_failed_message, res().getString(R.string.link_help));
                 }
-
             case DIALOG_DB_ERROR:
                 return res().getString(R.string.answering_error_message);
             case DIALOG_REPAIR_COLLECTION:
@@ -407,6 +369,8 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                 return res().getString(R.string.restore_backup);
             case DIALOG_FULL_SYNC_FROM_SERVER:
                 return res().getString(R.string.backup_full_sync_from_server_question);
+            case DIALOG_CURSOR_SIZE_LIMIT_EXCEEDED:
+                return res().getString(R.string.cursor_size_limit_exceeded);
             default:
                 return getArguments().getString("dialogMessage");
         }
@@ -432,6 +396,8 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
                 return res().getString(R.string.restore_backup_title);
             case DIALOG_FULL_SYNC_FROM_SERVER:
                 return res().getString(R.string.backup_full_sync_from_server);
+            case DIALOG_CURSOR_SIZE_LIMIT_EXCEEDED:
+                return res().getString(R.string.open_collection_failed_title);
             default:
                 return res().getString(R.string.answering_error_title);
         }        
@@ -468,6 +434,6 @@ public class DatabaseErrorDialog extends AsyncDialogFragment {
     
     
     public void dismissAllDialogFragments() {
-        ((DatabaseErrorDialogListener) getActivity()).dismissAllDialogFragments();
+        ((DeckPicker) getActivity()).dismissAllDialogFragments();
     }
 }

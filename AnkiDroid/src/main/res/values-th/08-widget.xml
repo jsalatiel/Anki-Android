@@ -39,6 +39,7 @@
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+  <!-- Widget -->
   <string name="widget_minimum_cards_due_notification_ticker_title">Cards due</string>
   <string name="widget_minimum_cards_due_notification_ticker_text">%d AnkiDroid cards due</string>
   <string name="widget_no_cards_due">No cards due</string>
@@ -50,4 +51,13 @@
     <item quantity="other">%1$d decks</item>
   </plurals>
   <string name="widget_small">AnkiDroid small</string>
+  <string name="widget_small_button">AnkiDroid</string>
+  <plurals name="widget_cards_due">
+    <item quantity="other">%d cards due</item>
+  </plurals>
+  <plurals name="widget_eta">
+    <item quantity="other">%d minutes remaining</item>
+  </plurals>
+  <string name="widget_add_note">Add note</string>
+  <string name="widget_add_note_button">Add new AnkiDroid note</string>
 </resources>

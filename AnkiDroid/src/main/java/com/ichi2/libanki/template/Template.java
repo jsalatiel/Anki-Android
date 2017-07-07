@@ -18,7 +18,6 @@ package com.ichi2.libanki.template;
 
 import android.text.TextUtils;
 
-import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.libanki.Utils;
 import com.ichi2.libanki.hooks.Hooks;
 
@@ -31,8 +30,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import timber.log.Timber;
 
 /**
  * This class renders the card content by parsing the card template and replacing all marked sections
@@ -243,7 +240,7 @@ public class Template {
         });
 
         for (String mod : mods) {
-            Timber.d("Models.get():: Processing field: modifier=%s, extra=%s, tag=%s, txt=%s", mod, extra, tag, txt);
+            //Timber.d("Models.get():: Processing field: modifier=%s, extra=%s, tag=%s, txt=%s", mod, extra, tag, txt);
             // built-in modifiers
             if (mod.equals("text")) {
                 // strip html

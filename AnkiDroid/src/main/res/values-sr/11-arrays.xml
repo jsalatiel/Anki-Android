@@ -50,16 +50,16 @@
     <item>Препоручени одговор (зелени)</item>
     <item>Боље од препорученог</item>
     <item>Опозови</item>
-    <item>Edit note</item>
-    <item>Mark note</item>
+    <item>Уреди белешку</item>
+    <item>Означи белешку</item>
     <item>Претрага израза</item>
     <item>Сакриј, покажи касније</item>
     <item>Откажи картицу</item>
-    <item>Delete note</item>
+    <item>Избриши белешку</item>
     <item>Пусти медију</item>
     <item>Прекини учење</item>
-    <item>Bury note</item>
-    <item>Suspend note</item>
+    <item>Закопај белешку</item>
+    <item>Откажи белешку</item>
   </string-array>
   <string-array name="leech_action_labels">
     <item>Откажи картицу</item>
@@ -80,15 +80,6 @@
     <item>Прво последње додате</item>
     <item>Relative overdueness</item>
   </string-array>
-  <string-array name="custom_study_options_labels">
-    <item>Увећај данашњи лимит нових карата</item>
-    <item>Увећај данашњи лимит прегледавања</item>
-    <item>Прегледај заборављених картице</item>
-    <item>Прегледај унапред</item>
-    <item>Учи случајну групу карата</item>
-    <item>Види нове картице</item>
-    <item>Постави ограничење по ознакама</item>
-  </string-array>
   <string-array name="add_to_cur_labels">
     <item>Користи текући шпил</item>
     <item>Одлучи по типу белешке</item>
@@ -101,5 +92,13 @@
   <string-array name="override_font_labels">
     <item>Када нема фонт одређен за картице</item>
     <item>Увек</item>
+  </string-array>
+  <string-array name="day_theme_labels">
+    <item>Light</item>
+    <item>Plain</item>
+  </string-array>
+  <string-array name="night_theme_labels">
+    <item>Black</item>
+    <item>Dark</item>
   </string-array>
 </resources>

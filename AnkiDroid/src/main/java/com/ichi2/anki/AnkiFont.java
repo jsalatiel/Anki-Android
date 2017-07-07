@@ -27,7 +27,7 @@ public class AnkiFont {
     private Boolean mIsDefault;
     private Boolean mIsOverride;
     private static final String fAssetPathPrefix = "/android_asset/fonts/";
-    private static Set<String> corruptFonts = new HashSet<String>();
+    private static Set<String> corruptFonts = new HashSet<>();
 
 
     private AnkiFont(String name, String family, List<String> attributes, String path) {
@@ -50,9 +50,9 @@ public class AnkiFont {
      */
     public static AnkiFont createAnkiFont(Context ctx, String path, boolean fromAssets) {
         File fontfile = new File(path);
-        String name = Utils.removeExtension(fontfile.getName());
+        String name = Utils.splitFilename(fontfile.getName())[0];
         String family = name;
-        List<String> attributes = new ArrayList<String>();
+        List<String> attributes = new ArrayList<>();
 
         if (fromAssets) {
             path = fAssetPathPrefix.concat(fontfile.getName());
@@ -109,22 +109,20 @@ public class AnkiFont {
 
 
     public String getDeclaration() {
-        StringBuilder sb = new StringBuilder("@font-face {");
-        sb.append(getCSS()).append(" src: url(\"file://").append(mPath).append("\");}");
-        return sb.toString();
+        return "@font-face {" + getCSS(false) + " src: url(\"file://" + mPath + "\");}";
     }
 
 
-    public String getCSS() {
+    public String getCSS(boolean override) {
         StringBuilder sb = new StringBuilder("font-family: \"").append(mFamily);
-        if (mIsOverride) {
+        if (override) {
             sb.append("\" !important;");
         } else {
             sb.append("\";");
         }
         for (String attr : mAttributes) {
             sb.append(" ").append(attr);
-            if (mIsOverride) {
+            if (override) {
                 if (sb.charAt(sb.length() - 1) == ';') {
                     sb.deleteCharAt(sb.length() - 1);
                     sb.append(" !important;");

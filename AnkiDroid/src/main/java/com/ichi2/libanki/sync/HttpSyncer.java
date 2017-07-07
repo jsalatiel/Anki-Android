@@ -20,6 +20,9 @@ package com.ichi2.libanki.sync;
 
 
 
+import android.content.SharedPreferences;
+import android.net.Uri;
+
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.exception.UnknownHttpResponseException;
 import com.ichi2.async.Connection;
@@ -104,7 +107,7 @@ public class HttpSyncer {
         mHKey = hkey;
         mSKey = Utils.checksum(Float.toString(new Random().nextFloat())).substring(0, 8);
         mCon = con;
-        mPostVars = new HashMap<String, Object>();
+        mPostVars = new HashMap<>();
     }
 
 
@@ -239,12 +242,10 @@ public class HttpSyncer {
                 Timber.e(e, "SSLException while building HttpClient");
                 throw new RuntimeException("SSLException while building HttpClient");
             }
-        } catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException | JSONException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             Timber.e(e, "BasicHttpSyncer.sync: IOException");
-            throw new RuntimeException(e);
-        } catch (JSONException e) {
             throw new RuntimeException(e);
         } finally {
             if (tmpFileBuffer != null && tmpFileBuffer.exists()) {
@@ -301,8 +302,6 @@ public class HttpSyncer {
             }
             rd.close();
             return sb.toString();
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -347,6 +346,9 @@ public class HttpSyncer {
 
     public long finish() throws UnknownHttpResponseException {
         return 0;
+    }
+
+    public void abort() throws UnknownHttpResponseException {
     }
 
 
@@ -448,6 +450,13 @@ public class HttpSyncer {
 
 
     public String syncURL() {
+        // Allow user to specify custom sync server
+        SharedPreferences userPreferences = AnkiDroidApp.getSharedPrefs(AnkiDroidApp.getInstance());
+        if (userPreferences!= null && userPreferences.getBoolean("useCustomSyncServer", false)) {
+            Uri syncBase = Uri.parse(userPreferences.getString("syncBaseUrl", Consts.SYNC_BASE));
+            return syncBase.buildUpon().appendPath("sync").toString() + "/";
+        }
+        // Usual case
         return Consts.SYNC_BASE + "sync/";
     }
 }

@@ -1,14 +1,12 @@
 
 package com.ichi2.anki.dialogs;
 
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Message;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.ichi2.anki.R;
 import com.ichi2.libanki.Collection;
-import com.ichi2.themes.Themes;
 
 public class SyncErrorDialog extends AsyncDialogFragment {
     public static final int DIALOG_USER_NOT_LOGGED_IN_SYNC = 0;
@@ -19,6 +17,7 @@ public class SyncErrorDialog extends AsyncDialogFragment {
     public static final int DIALOG_SYNC_SANITY_ERROR = 6;
     public static final int DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_LOCAL = 7;
     public static final int DIALOG_SYNC_SANITY_ERROR_CONFIRM_KEEP_REMOTE = 8;
+    public static final int DIALOG_MEDIA_SYNC_ERROR = 9;
 
     public interface SyncErrorDialogListener {
         public void showSyncErrorDialog(int dialogType);
@@ -37,6 +36,9 @@ public class SyncErrorDialog extends AsyncDialogFragment {
 
 
         public Collection getCol();
+
+
+        public void mediaCheck();
 
 
         public void dismissAllDialogFragments();
@@ -199,7 +201,17 @@ public class SyncErrorDialog extends AsyncDialogFragment {
                             }
                         })
                         .show();
-
+            case DIALOG_MEDIA_SYNC_ERROR:
+                return builder.positiveText(R.string.check_media)
+                        .negativeText(R.string.cancel)
+                        .callback(new MaterialDialog.ButtonCallback() {
+                            @Override
+                            public void onPositive(MaterialDialog dialog) {
+                                ((SyncErrorDialogListener) getActivity()).mediaCheck();
+                                dismissAllDialogFragments();
+                            }
+                        })
+                        .show();
             default:
                 return null;
         }

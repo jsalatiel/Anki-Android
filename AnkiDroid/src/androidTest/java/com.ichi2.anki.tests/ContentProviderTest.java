@@ -2,6 +2,7 @@
  *                                                                                      *
  * Copyright (c) 2015 Frank Oltmanns <frank.oltmanns@gmail.com>                         *
  * Copyright (c) 2015 Timothy Rae <timothy.rae@gmail.com>                               *
+ * Copyright (c) 2016 Mark Carter <mark@marcardar.com>                                  *
  *                                                                                      *
  * This program is free software; you can redistribute it and/or modify it under        *
  * the terms of the GNU General Public License as published by the Free Software        *
@@ -19,6 +20,7 @@
 package com.ichi2.anki.tests;
 
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
@@ -29,7 +31,6 @@ import com.ichi2.anki.AbstractFlashcardViewer;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.CollectionHelper;
 import com.ichi2.anki.FlashCardsContract;
-import com.ichi2.anki.api.AddContentApi;
 import com.ichi2.anki.exception.ConfirmModSchemaException;
 import com.ichi2.libanki.Card;
 import com.ichi2.libanki.Collection;
@@ -44,7 +45,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -55,6 +55,7 @@ import java.util.List;
 public class ContentProviderTest extends AndroidTestCase {
 
     private static final String BASIC_MODEL_NAME = "com.ichi2.anki.provider.test.basic.x94oa3F";
+    private static final String TEST_FIELD_NAME = "TestFieldName";
     private static final String TEST_FIELD_VALUE = "test field value";
     private static final String TEST_TAG = "aldskfhewjklhfczmxkjshf";
     private static final String[] TEST_DECKS = {"cmxieunwoogyxsctnjmv"
@@ -90,25 +91,28 @@ public class ContentProviderTest extends AndroidTestCase {
         // Use the names of the fields as test values for the notes which will be added
         mDummyFields = flds.toArray(new String[flds.size()]);
         // create test decks and add one note for every deck
-        final AddContentApi api = new AddContentApi(getContext());
-        HashMap<Long, String> deckList = api.getDeckList();
-        mNumDecksBeforeTest = deckList.size();
-        // TODO: add the notes directly with libanki
+        mNumDecksBeforeTest = col.getDecks().count();
         for(int i = 0; i < TEST_DECKS.length; i++) {
-            mTestDeckIds[i] = api.addNewDeck(TEST_DECKS[i]);
-            Uri newNoteUri = api.addNewNote(mModelId, mTestDeckIds[i], mDummyFields, TEST_TAG);
-            assertNotNull(newNoteUri);
-            mCreatedNotes.add(newNoteUri);
-            // Check that the flds data was set correctly
-            long nid = Long.parseLong(newNoteUri.getLastPathSegment());
-            Note addedNote = col.getNote(nid);
-            assertTrue("Check that the flds data was set correctly", Arrays.equals(addedNote.getFields(), mDummyFields));
-            assertTrue("Check that there was at least one card generated", addedNote.cards().size() > 0);
+            long did = col.getDecks().id(TEST_DECKS[i]);
+            mTestDeckIds[i] = did;
+            mCreatedNotes.add(setupNewNote(col, mModelId, did, mDummyFields, TEST_TAG));
         }
         // Add a note to the default deck as well so that testQueryNextCard() works
-        Uri newNoteUri = api.addNewNote(mModelId, 1, mDummyFields, TEST_TAG);
-        assertNotNull(newNoteUri);
-        mCreatedNotes.add(newNoteUri);
+        mCreatedNotes.add(setupNewNote(col, mModelId, 1, mDummyFields, TEST_TAG));
+    }
+
+    private static Uri setupNewNote(Collection col, long mid, long did, String[] flds, String tag) {
+        Note newNote = new Note(col, col.getModels().get(mid));
+        for (int idx=0; idx < flds.length; idx++) {
+            newNote.setField(idx, flds[idx]);
+        }
+        newNote.addTag(tag);
+        assertTrue("At least one card added for note", col.addNote(newNote) >= 1);
+        for (Card c: newNote.cards()) {
+            c.setDid(did);
+            c.flush();
+        }
+        return Uri.withAppendedPath(FlashCardsContract.Note.CONTENT_URI, Long.toString(newNote.getId()));
     }
 
     /**
@@ -148,11 +152,14 @@ public class ContentProviderTest extends AndroidTestCase {
     public void testInsertAndRemoveNote() throws Exception {
         // Get required objects for test
         final ContentResolver cr = getContext().getContentResolver();
-        final Collection col = CollectionHelper.getInstance().getCol(getContext());
-        final AddContentApi api = new AddContentApi(getContext());
         // Add the note
-        Uri newNoteUri = api.addNewNote(mModelId, 1, TEST_NOTE_FIELDS, TEST_TAG);
+        ContentValues values = new ContentValues();
+        values.put(FlashCardsContract.Note.MID, mModelId);
+        values.put(FlashCardsContract.Note.FLDS, Utils.joinFields(TEST_NOTE_FIELDS));
+        values.put(FlashCardsContract.Note.TAGS, TEST_TAG);
+        Uri newNoteUri = cr.insert(FlashCardsContract.Note.CONTENT_URI, values);
         assertNotNull("Check that URI returned from addNewNote is not null", newNoteUri);
+        final Collection col = reopenCol();  // test that the changes are physically saved to the DB
         // Check that it looks as expected
         Note addedNote = new Note(col, Long.parseLong(newNoteUri.getLastPathSegment()));
         addedNote.load();
@@ -168,6 +175,95 @@ public class ContentProviderTest extends AndroidTestCase {
         } catch (RuntimeException e) {
             // Expect RuntimeException to be thrown when loading deleted note
         }
+    }
+
+    /**
+     * Check that inserting and removing a note into default deck works as expected
+     */
+    public void testInsertTemplate() throws Exception {
+        // Get required objects for test
+        final ContentResolver cr = getContext().getContentResolver();
+        Collection col = CollectionHelper.getInstance().getCol(getContext());
+        // Add a new basic model that we use for testing purposes (existing models could potentially be corrupted)
+        JSONObject model = Models.addBasicModel(col, BASIC_MODEL_NAME);
+        long modelId = model.getLong("id");
+        // Add the note
+        Uri modelUri = ContentUris.withAppendedId(FlashCardsContract.Model.CONTENT_URI, modelId);
+        int testIndex = TEST_MODEL_CARDS.length - 1; // choose the last one because not the same as the basic model template
+        int expectedOrd = model.getJSONArray("tmpls").length();
+        ContentValues cv = new ContentValues();
+        cv.put(FlashCardsContract.CardTemplate.NAME, TEST_MODEL_CARDS[testIndex]);
+        cv.put(FlashCardsContract.CardTemplate.QUESTION_FORMAT, TEST_MODEL_QFMT[testIndex]);
+        cv.put(FlashCardsContract.CardTemplate.ANSWER_FORMAT, TEST_MODEL_AFMT[testIndex]);
+        cv.put(FlashCardsContract.CardTemplate.BROWSER_QUESTION_FORMAT, TEST_MODEL_QFMT[testIndex]);
+        cv.put(FlashCardsContract.CardTemplate.BROWSER_ANSWER_FORMAT, TEST_MODEL_AFMT[testIndex]);
+        Uri templatesUri = Uri.withAppendedPath(modelUri, "templates");
+        Uri templateUri = cr.insert(templatesUri, cv);
+        col = reopenCol();  // test that the changes are physically saved to the DB
+        assertNotNull("Check template uri", templateUri);
+        assertEquals("Check template uri ord", expectedOrd, ContentUris.parseId(templateUri));
+        JSONObject template = col.getModels().get(modelId).getJSONArray("tmpls").getJSONObject(expectedOrd);
+        assertEquals("Check template JSONObject ord", expectedOrd, template.getInt("ord"));
+        assertEquals("Check template name", TEST_MODEL_CARDS[testIndex], template.getString("name"));
+        assertEquals("Check qfmt", TEST_MODEL_QFMT[testIndex], template.getString("qfmt"));
+        assertEquals("Check afmt", TEST_MODEL_AFMT[testIndex], template.getString("afmt"));
+        assertEquals("Check bqfmt", TEST_MODEL_QFMT[testIndex], template.getString("bqfmt"));
+        assertEquals("Check bafmt", TEST_MODEL_AFMT[testIndex], template.getString("bafmt"));
+        col.getModels().rem(model);
+    }
+
+    /**
+     * Check that inserting and removing a note into default deck works as expected
+     */
+    public void testInsertField() throws Exception {
+        // Get required objects for test
+        final ContentResolver cr = getContext().getContentResolver();
+        Collection col = CollectionHelper.getInstance().getCol(getContext());
+        JSONObject model = Models.addBasicModel(col, BASIC_MODEL_NAME);
+        long modelId = model.getLong("id");
+        JSONArray initialFldsArr = model.getJSONArray("flds");
+        int initialFieldCount = initialFldsArr.length();
+        Uri noteTypeUri = ContentUris.withAppendedId(FlashCardsContract.Model.CONTENT_URI, modelId);
+        ContentValues insertFieldValues = new ContentValues();
+        insertFieldValues.put(FlashCardsContract.Model.FIELD_NAME, TEST_FIELD_NAME);
+        Uri fieldUri = cr.insert(Uri.withAppendedPath(noteTypeUri, "fields"), insertFieldValues);
+        assertNotNull("Check field uri", fieldUri);
+        // Ensure that the changes are physically saved to the DB
+        col = reopenCol();
+        model = col.getModels().get(modelId);
+        // Test the field is as expected
+        long fieldId = ContentUris.parseId(fieldUri);
+        assertEquals("Check field id", initialFieldCount, fieldId);
+        JSONArray fldsArr = model.getJSONArray("flds");
+        assertEquals("Check fields length", initialFieldCount + 1, fldsArr.length());
+        assertEquals("Check last field name", TEST_FIELD_NAME, fldsArr.getJSONObject(fldsArr.length() - 1).optString("name", ""));
+        col.getModels().rem(model);
+    }
+
+    /**
+     * Test queries to notes table using direct SQL URI
+     */
+    public void testQueryDirectSqlQuery() {
+        // search for correct mid
+        final ContentResolver cr = getContext().getContentResolver();
+        Cursor cursor = cr.query(FlashCardsContract.Note.CONTENT_URI_V2, null, String.format("mid=%d", mModelId), null, null);
+        assertNotNull(cursor);
+        try {
+            assertEquals("Check number of results", mCreatedNotes.size(), cursor.getCount());
+        } finally {
+            cursor.close();
+        }
+        // search for bogus mid
+        cursor = cr.query(FlashCardsContract.Note.CONTENT_URI_V2, null, "mid=0", null, null);
+        assertNotNull(cursor);
+        try {
+            assertEquals("Check number of results", 0, cursor.getCount());
+        } finally {
+            cursor.close();
+        }
+        // check usage of selection args
+        cursor = cr.query(FlashCardsContract.Note.CONTENT_URI_V2, null, "mid=?", new String[]{"0"}, null);
+        assertNotNull(cursor);
     }
 
     /**
@@ -280,22 +376,26 @@ public class ContentProviderTest extends AndroidTestCase {
         cv.put(FlashCardsContract.Model.NAME, TEST_MODEL_NAME);
         cv.put(FlashCardsContract.Model.FIELD_NAMES, Utils.joinFields(TEST_MODEL_FIELDS));
         cv.put(FlashCardsContract.Model.NUM_CARDS, TEST_MODEL_CARDS.length);
-        cv.put(FlashCardsContract.Model.CSS, TEST_MODEL_CSS);
         Uri modelUri = cr.insert(FlashCardsContract.Model.CONTENT_URI, cv);
         assertNotNull("Check inserted model isn't null", modelUri);
         long mid = Long.parseLong(modelUri.getLastPathSegment());
-        final Collection col = CollectionHelper.getInstance().getCol(getContext());
+        Collection col = reopenCol();
         try {
             JSONObject model = col.getModels().get(mid);
             assertEquals("Check model name", TEST_MODEL_NAME, model.getString("name"));
-            assertEquals("Check css", TEST_MODEL_CSS, model.getString("css"));
             assertEquals("Check templates length", TEST_MODEL_CARDS.length, model.getJSONArray("tmpls").length());
             assertEquals("Check field length", TEST_MODEL_FIELDS.length, model.getJSONArray("flds").length());
             JSONArray flds = model.getJSONArray("flds");
             for (int i = 0; i < flds.length(); i++) {
                 assertEquals("Check name of fields", flds.getJSONObject(i).getString("name"), TEST_MODEL_FIELDS[i]);
             }
-            // Update each of the templates in the model
+            // Test updating the model CSS (to test updating MODELS_ID Uri)
+            cv = new ContentValues();
+            cv.put(FlashCardsContract.Model.CSS, TEST_MODEL_CSS);
+            assertTrue(cr.update(modelUri, cv, null, null) > 0);
+            col = reopenCol();
+            assertEquals("Check css", TEST_MODEL_CSS, col.getModels().get(mid).getString("css"));
+            // Update each of the templates in model (to test updating MODELS_ID_TEMPLATES_ID Uri)
             for (int i = 0; i < TEST_MODEL_CARDS.length; i++) {
                 cv = new ContentValues();
                 cv.put(FlashCardsContract.CardTemplate.NAME, TEST_MODEL_CARDS[i]);
@@ -305,6 +405,7 @@ public class ContentProviderTest extends AndroidTestCase {
                 cv.put(FlashCardsContract.CardTemplate.BROWSER_ANSWER_FORMAT, TEST_MODEL_AFMT[i]);
                 Uri tmplUri = Uri.withAppendedPath(Uri.withAppendedPath(modelUri, "templates"), Integer.toString(i));
                 assertTrue("Update rows", cr.update(tmplUri, cv, null, null) > 0);
+                col = reopenCol();
                 JSONObject template = col.getModels().get(mid).getJSONArray("tmpls").getJSONObject(i);
                 assertEquals("Check template name", TEST_MODEL_CARDS[i], template.getString("name"));
                 assertEquals("Check qfmt", TEST_MODEL_QFMT[i], template.getString("qfmt"));
@@ -378,12 +479,13 @@ public class ContentProviderTest extends AndroidTestCase {
                     assertTrue("Check that there is at least one result for cards", cardsCursor.getCount() > 0);
                     while (cardsCursor.moveToNext()) {
                         long targetDid = mTestDeckIds[0];
-                        // Move to test deck
+                        // Move to test deck (to test NOTES_ID_CARDS_ORD Uri)
                         ContentValues values = new ContentValues();
                         values.put(FlashCardsContract.Card.DECK_ID, targetDid);
                         Uri cardUri = Uri.withAppendedPath(cardsUri,
                                 cardsCursor.getString(cardsCursor.getColumnIndex(FlashCardsContract.Card.CARD_ORD)));
                         cr.update(cardUri, values, null, null);
+                        reopenCol();
                         Cursor movedCardCur = cr.query(cardUri, null, null, null, null);
                         assertNotNull("Check that there is a valid cursor after moving card", movedCardCur);
                         assertTrue("Move to beginning of cursor after moving card", movedCardCur.moveToFirst());
@@ -635,9 +737,7 @@ public class ContentProviderTest extends AndroidTestCase {
         ContentValues values = new ContentValues();
         values.put(FlashCardsContract.Deck.DECK_ID, deckId);
         cr.update(selectDeckUri, values, null, null);
-
-        Collection col;
-        col = CollectionHelper.getInstance().getCol(getContext());
+        Collection col = reopenCol();
         assertEquals("Check that the selected deck has been correctly set", deckId, col.getDecks().selected());
     }
 
@@ -647,10 +747,9 @@ public class ContentProviderTest extends AndroidTestCase {
     public void testAnswerCard(){
         Collection col;
         col = CollectionHelper.getInstance().getCol(getContext());
-        Sched sched = col.getSched();
         long deckId = mTestDeckIds[0];
         col.getDecks().select(deckId);
-        Card card = sched.getCard();
+        Card card = col.getSched().getCard();
 
         ContentResolver cr = getContext().getContentResolver();
         Uri reviewInfoUri = FlashCardsContract.ReviewInfo.CONTENT_URI;
@@ -663,11 +762,9 @@ public class ContentProviderTest extends AndroidTestCase {
         values.put(FlashCardsContract.ReviewInfo.CARD_ORD, cardOrd);
         values.put(FlashCardsContract.ReviewInfo.EASE, ease);
         int updateCount = cr.update(reviewInfoUri, values, null, null);
-
         assertEquals("Check if update returns 1", 1, updateCount);
-
-        sched.reset();
-        Card newCard = sched.getCard();
+        col.getSched().reset();
+        Card newCard = col.getSched().getCard();
         if(newCard != null){
             if(newCard.note().getId() == card.note().getId() && newCard.getOrd() == card.getOrd()){
                 fail("Next scheduled card has not changed");
@@ -675,6 +772,11 @@ public class ContentProviderTest extends AndroidTestCase {
         }else{
             //We expected this
         }
+    }
+
+    private Collection reopenCol() {
+        CollectionHelper.getInstance().closeCollection(false);
+        return CollectionHelper.getInstance().getCol(getContext());
     }
 
 }

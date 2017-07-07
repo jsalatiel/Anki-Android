@@ -39,6 +39,10 @@
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+  <!-- generic strings -->
+  <string name="disabled">Wyłączone</string>
+  <string name="enabled">Włączone</string>
+  <!-- preferences.xml categories-->
   <string name="pref_cat_general">AnkiDroid</string>
   <string name="pref_cat_general_summ">Ustawienia ogólne</string>
   <string name="pref_cat_reviewing">Przegląd</string>
@@ -47,8 +51,10 @@
   <string name="pref_cat_flashcard">Wyświetlanie</string>
   <string name="pref_cat_whiteboard">Tablica</string>
   <string name="pref_cat_automatic_display">Automatyczne wyświetlanie odpowiedzi</string>
-  <string name="pref_cat_fonts">Fonty</string>
-  <string name="pref_cat_fonts_summ">Zmień domyślną czcionkę i jej rozmiar</string>
+  <string name="pref_cat_appearance">Wygląd</string>
+  <string name="pref_cat_appearance_summ">Zmiana tematów i czcionki domyślnej</string>
+  <string name="pref_cat_themes">Motywy</string>
+  <string name="pref_cat_fonts">Czcionki</string>
   <string name="pref_cat_gestures">Gesty</string>
   <string name="pref_cat_gestures_summ">Użyj gestów zamiast przycisków</string>
   <string name="pref_cat_actions">Czynności</string>
@@ -59,29 +65,38 @@
   <string name="pref_cat_plugins">Pluginy</string>
   <string name="about_title">O programie AnkiDroid</string>
   <string name="about_version">Wersja: </string>
+  <!-- preferences.xml entries-->
   <string name="whiteboard_stroke_width">Szerokość kreski</string>
   <string name="whiteboard_black">Czarne kreski</string>
   <string name="whiteboard_black_summ">Oszczędzaj pamięć z wyjątkiem trybu nocnego</string>
   <string name="write_answers_disable">Zablokuj wpisywanie pełnej odpowiedzi</string>
   <string name="write_answers_disable_summ">Blokuje pokazywanie się klawiatury na kartach zawierających pola \"wpisz tekst w odpowiedzi\"</string>
+  <string name="use_input_tag">Wprowadź odpowiedź do karty</string>
+  <string name="use_input_tag_summ">Użyj pola tekstowego na karcie do wprowadzenia odpowiedzi</string>
   <string name="text_selection_click">Obejście problemu długiego przyciśnięcia</string>
   <string name="text_selection_click_summ">Wybierz, jeśli masz problemy z zaznaczaniem tekstu poprzez przytrzymanie.</string>
   <string name="dictionary">Słownik</string>
   <string name="reset_languages">Zresetuj język</string>
-  <string name="reset_languages_summ">Zresetuj przypisanie języków (dla tekstu do mowy) dla wszystkich talii. Zresetuj ustawienia dla konkretnej talii na ekranie wyboru talii</string>
+  <string name="reset_languages_summ">Zresetuj przypisania języka (dla czytania tekstu i dla słowników) dla wszystkich talii</string>
   <string name="reset_languages_question">Reset wszystkich ustawień języków?</string>
   <string name="reset_confirmation">Zresetuj wszystkie ustawienia</string>
-  <string name="card_zoom">Card zoom</string>
-  <string name="image_zoom">Image zoom</string>
+  <string name="card_zoom">Powiększenie karty</string>
+  <string name="image_zoom">Powiększenie obrazów/grafiki</string>
   <string name="button_size">Rozmiar przycisku odpowiedzi</string>
   <string name="card_browser_font_size">Skalowanie fontu przeglądania kart</string>
-  <string name="col_path">Ścieżka kolekcji</string>
+  <string name="col_path">Katalog AnkiDroid</string>
   <string name="fullscreen_review">Tryb pełnoekranowy</string>
-  <string name="fullscreen_review_summ">Ukryj systemowy pasek statusu</string>
+  <string name="full_screen_off">Wyłączony</string>
+  <string name="full_screen_system">Ukryj paski systemowe</string>
+  <string name="full_screen_complete">Ukryj paski systemowe i przyciski odpowiedzi</string>
+  <string name="full_screen_error_gestures">Musisz włączyć detekcję gestów, aby ukryć przyciski odpowiedzi</string>
+  <string name="answer_buttons_position">Położenie przycisków odpowiedzi</string>
+  <string-array name="answer_buttons_position_labels">
+    <item>Góra</item>
+    <item>Dół</item>
+  </string-array>
   <string name="gestures">Włącz obsługę gestów</string>
   <string name="gestures_summ">Przydziel gesty do akcji takich jak odpowiedzi lub edycja kart.</string>
-  <string name="gestures_hide_answer_buttons">Hide answer buttons</string>
-  <string name="gestures_hide_answer_buttons_summ">Don’t show answer buttons when gestures are enabled</string>
   <string name="gestures_swipe_up">Przesuń w górę</string>
   <string name="gestures_swipe_down">Przesuń w dół</string>
   <string name="gestures_swipe_left">Przesuń w lewo</string>
@@ -103,13 +118,14 @@
   <string name="sync_account">Konto AnkiWeb</string>
   <string name="sync_account_summ_logged_out">Nie zalogowany</string>
   <string name="sync_account_summ_logged_in">%s</string>
-  <string name="automatic_sync_choice">Automatic synchronization</string>
-  <string name="automatic_sync_choice_summ">Sync automatically on app start/exit if the last sync was more than 10
-        minutes ago.</string>
+  <string name="automatic_sync_choice">Synchronizacja automatyczna</string>
+  <string name="automatic_sync_choice_summ">Synchronizuj automatycznie podczas startu/zakończenia aplikacji jeżeli ostatnia synchronizacja była później niż 10 minut.</string>
   <string name="fix_hebrew_text">Poprawka dla samogłosek hebrajskich</string>
   <string name="fix_hebrew_text_summ">Obejście dla prawidłowego renderowania hebrajskich samogłosek.</string>
   <string name="fix_hebrew_instructions">To ustawienie omija algorytm RTL Androida aby poprawnie wyświetlać hebrajskie samogłoski.\n\nMusisz jednak najpierw pobrać plik Tohu.ttf i skopiować go ręcznie do:\n%s/fonts/\n\nNie musisz modyfikować swoich kart.</string>
   <string name="fix_hebrew_download_font">Pobierz czcionkę</string>
+  <string name="day_theme">Motyw na dzień</string>
+  <string name="night_theme">Motyw na noc</string>
   <string name="default_font">Domyślna czcionka</string>
   <string name="override_font">Zastosowanie standardowego fontu</string>
   <string name="language">Język</string>
@@ -122,7 +138,7 @@
   <string name="notification_minimum_cards_due_vibrate">Wibracje</string>
   <string name="notification_minimum_cards_due_blink">Migotanie</string>
   <string name="timeout_answer_text">Automatyczne wyświetlanie odpowiedzi</string>
-  <string name="timeout_answer_summ">Pokaż odpowiedź automatycznie bez udziału użytkownika</string>
+  <string name="timeout_answer_summ">Show answer automatically without user input. Delay includes time for automatically played audio files.</string>
   <string name="timeout_answer_seconds">Czas do pokazania odpowiedzi</string>
   <string name="timeout_answer_seconds_summ">XXX s</string>
   <string name="timeout_question_seconds">Czas do pokazania kolejnego pytania</string>
@@ -137,6 +153,8 @@
   <string name="show_estimates_summ">Pokazuj czas kolejnej powtórki nad przyciskami odpowiedzi</string>
   <string name="show_progress">Pokaż pozostałe</string>
   <string name="show_progress_summ">Pokazuj licznik pozostałych kart</string>
+  <string name="show_eta">Pokaż ETA</string>
+  <string name="show_eta_summ">Pokaż pozostały czas</string>
   <string name="use_current">Talia dla nowych kart</string>
   <string name="new_spread">Pozycja nowych kart</string>
   <string name="learn_cutoff">Limit nauki z wyprzedzeniem</string>
@@ -149,24 +167,44 @@
   <string name="input_workaround_summ">Obejście problemu nieaktywnych pól tekstowych HTML na niektórych urządzeniach.</string>
   <string name="pref_keep_screen_on">Utrzymuj włączony ekran</string>
   <string name="pref_keep_screen_on_summ">Zablokuj wyłącznik czasowy ekranu</string>
-  <string name="fix_arabic_text">Popraw wyświetlanie arabskiego</string>
-  <string name="fix_arabic_text_summ">Częściowe obejście problemu z ograniczoną obsługą arabskiego przez Androida. Kiedy jest włączone, niemożliwa jest edycja kart.</string>
   <string name="convert_fen_text">Obsługa notacji szachowej</string>
-  <string name="filter_google_translate">Z Google Translate</string>
-  <string name="filter_google_translate_summ">Po prostu zapisz słowo źródłowe i tłumaczenie</string>
   <string name="convert_fen_text_summ">Rysuj szachownicę z notacji Forsytha-Edwardsa. Notacja musi być w znacznikach [fen][/fen].</string>
+  <string name="enable_api_title">Zezwól na AnkiDroid API</string>
+  <string name="enable_api_summary">Pozwól innym aplikacjom na podłączanie do AnkiDroid i zapisywanie i odczyt danych bez Twojej ingerencji</string>
+  <string name="custom_buttons">Przyciski paska aplikacji</string>
+  <string name="custom_buttons_summary">Ustaw, które akcje pokażą się na pasku aplikacji</string>
+  <string name="custom_buttons_setting_always_show">Zawsze pokazuj</string>
+  <string name="custom_buttons_setting_if_room">Pokaż jeśli jest miejsce</string>
+  <string name="custom_buttons_setting_menu_only">Tylko w menu</string>
+  <string name="reset_custom_buttons">Resetuj do domyślnych</string>
+  <!-- Advanced statistics settings -->
+  <string name="advanced_statistics_title">Zaawansowane statystyki</string>
+  <string name="enable_advanced_statistics_title">Włącz zaawansowane statystyki</string>
+  <string name="enable_advanced_statistics_summ">Prognozy na podstawie obliczeń lub symulacji przyszłych powtórek (włączone) lub przyszłych już zaplanowanych powtórek (wyłączone).</string>
+  <string name="advanced_forecast_stats_compute_n_days_title">Oblicz dla pierwszych n dni, symuluj resztę</string>
+  <string name="advanced_forecast_stats_compute_precision_title">Dokładność obliczeń</string>
+  <string name="advanced_forecast_stats_mc_n_iterations_title">Liczba iteracji symulacji</string>
+  <!-- Custom sync server settings -->
+  <string name="custom_sync_server_title">Własny serwer synchronizacji</string>
+  <string name="custom_sync_server_enable_title">Używaj niestandardowego serwera synchronizacji</string>
+  <string name="custom_sync_server_enable_summary">Jeśli nie chcesz używać osobistej usługi AnkiWeb, możesz ustawić tutaj alternatywny serwer</string>
+  <string name="custom_sync_server_base_url_title">Adres url synchronizacji</string>
+  <string name="custom_sync_server_media_url_title">Adres url synchronizacji mediów</string>
+  <!-- studyoptions -->
   <string name="studyoptions_limit_select_tags">Wybierz etykiety</string>
+  <!-- Deck configurations -->
   <string name="deck_conf_deck_description">Opis talii</string>
   <string name="deck_conf_group">Grupa opcji</string>
   <plurals name="deck_conf_group_summ">
-    <item quantity="one">%1$s\n%2$d deck uses this group</item>
-    <item quantity="few">%1$s\n%2$d decks use this group</item>
-    <item quantity="other">%1$s\n%2$d decks use this group</item>
+    <item quantity="one">Tej grupy używa %1$s\n%2$d talia</item>
+    <item quantity="few">Tej grupy używa(ją) %1$s\n%2$d talia(e)</item>
+    <item quantity="other">Tej grupy używają %1$s\n%2$d talie</item>
   </plurals>
   <string name="deck_conf_new_cards">Nowe karty</string>
   <string name="deck_conf_rev_cards">Powtórki</string>
   <string name="deck_conf_lps_cards">Pomyłki</string>
   <string name="deck_conf_general">Ogólne</string>
+  <string name="deck_conf_reminders">Przypomnienia</string>
   <string name="deck_conf_steps">Kroki (w minutach)</string>
   <string name="deck_conf_order">Kolejność</string>
   <string name="deck_conf_new_cards_day">Nowe karty/dzień</string>
@@ -206,9 +244,9 @@
   <string name="deck_conf_remove_message">Usunąć bieżące ustawienia grupy?</string>
   <string name="deck_conf_set_subdecks">Ustaw dla wszystkich sub-talii</string>
   <plurals name="deck_conf_set_subdecks_summ">
-    <item quantity="one">%s subdeck will use this group</item>
-    <item quantity="few">%s subdecks will use this group</item>
-    <item quantity="other">%s subdecks will use this group</item>
+    <item quantity="one">Tej grupy używa Sub-talia %s</item>
+    <item quantity="few">Tej grupy używa(ją) Sub-talia(e) %s</item>
+    <item quantity="other">Tej grupy używają Sub-talie %s</item>
   </plurals>
   <string name="deck_conf_set_subdecks_title">Ustaw dla wszystkich sub-talii</string>
   <string name="deck_conf_set_subdecks_message">Zastosować bieżące ustawienia grupy dla wszystkich sub-talii tej talii?</string>
@@ -220,6 +258,8 @@
   <string name="deck_conf_cram_order">karty zaznaczone przez</string>
   <string name="deck_conf_cram_reschedule">Kolejkuj ponownie</string>
   <string name="deck_conf_cram_reschedule_summ">Kolejkuj karty ponownie bazując na moich odpowiedziach w tej talii</string>
-  <string name="deck_conf_cram_steps">Własne kroki</string>
+  <string name="deck_conf_cram_steps">Custom steps (in minutes)</string>
   <string name="deck_conf_cram_steps_summ">Zdefiniuj własne kroki</string>
+  <string name="deck_conf_reminders_enabled">Włącz powiadomienia dla tej talii</string>
+  <string name="deck_conf_reminders_time">Przypomnij o</string>
 </resources>

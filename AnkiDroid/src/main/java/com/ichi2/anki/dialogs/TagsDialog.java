@@ -10,12 +10,10 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,12 +25,10 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.ichi2.anki.AnkiActivity;
 import com.ichi2.anki.R;
+import com.ichi2.anki.UIUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,10 +92,10 @@ public class TagsDialog extends DialogFragment {
 
         mType = getArguments().getInt(DIALOG_TYPE_KEY);
 
-        mCurrentTags = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        mCurrentTags = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         mCurrentTags.addAll(getArguments().getStringArrayList(CHECKED_TAGS_KEY));
 
-        mAllTags = new ArrayList<String>();
+        mAllTags = new ArrayList<>();
         mAllTags.addAll(getArguments().getStringArrayList(ALL_TAGS_KEY));
 
         for (String tag : mCurrentTags) {
@@ -167,7 +163,7 @@ public class TagsDialog extends DialogFragment {
                     @Override
                     public void onPositive(MaterialDialog dialog) {
                         mTagsDialogListener
-                                .onPositive(new ArrayList<String>(mCurrentTags), mSelectedOption);
+                                .onPositive(new ArrayList<>(mCurrentTags), mSelectedOption);
                     }
                 });
         mDialog = builder.build();
@@ -297,8 +293,8 @@ public class TagsDialog extends DialogFragment {
             }
             mTagsArrayAdapter.notifyDataSetChanged();
             // Show a snackbar to let the user know the tag was added successfully
-            Snackbar.make(mDialog.getView().findViewById(R.id.tags_dialog_snackbar),
-                    feedbackText, Snackbar.LENGTH_LONG).show();
+            UIUtils.showSnackbar(getActivity(), feedbackText, false, -1, null,
+                    mDialog.getView().findViewById(R.id.tags_dialog_snackbar), null);
         }
     }
 
@@ -318,7 +314,7 @@ public class TagsDialog extends DialogFragment {
         public ArrayList<String> mTagsList;
 
         public  TagsArrayAdapter() {
-            mTagsList = new ArrayList<String>();
+            mTagsList = new ArrayList<>();
             mTagsList.addAll(mAllTags);
             sortData();
         }
@@ -380,7 +376,7 @@ public class TagsDialog extends DialogFragment {
             private ArrayList<String> mFilteredTags;
             private TagsFilter() {
                 super();
-                mFilteredTags = new ArrayList<String>();
+                mFilteredTags = new ArrayList<>();
             }
 
             @Override

@@ -17,7 +17,6 @@
 
 package com.ichi2.libanki.sync;
 
-import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.exception.UnknownHttpResponseException;
 import com.ichi2.async.Connection;
 import com.ichi2.libanki.Consts;
@@ -29,8 +28,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -46,7 +43,7 @@ public class RemoteServer extends HttpSyncer {
     @Override
     public HttpResponse hostKey(String user, String pw) throws UnknownHttpResponseException {
         try {
-            mPostVars = new HashMap<String, Object>();
+            mPostVars = new HashMap<>();
             JSONObject jo = new JSONObject();
             jo.put("u", user);
             jo.put("p", pw);
@@ -58,24 +55,9 @@ public class RemoteServer extends HttpSyncer {
 
 
     @Override
-    public HttpResponse register(String user, String pw) throws UnknownHttpResponseException {
-        try {
-            JSONObject jo = new JSONObject();
-            jo.put("u", URLEncoder.encode(user, "UTF-8"));
-            jo.put("p", URLEncoder.encode(pw, "UTF-8"));
-            return super.req("register", null, 6, jo);
-        } catch (JSONException e) {
-            return null;
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
-    }
-
-
-    @Override
     public HttpResponse meta() throws UnknownHttpResponseException {
         try {
-            mPostVars = new HashMap<String, Object>();
+            mPostVars = new HashMap<>();
             mPostVars.put("k", mHKey);
             mPostVars.put("s", mSKey);
             JSONObject jo = new JSONObject();
@@ -91,20 +73,20 @@ public class RemoteServer extends HttpSyncer {
 
     @Override
     public JSONObject applyChanges(JSONObject kw) throws UnknownHttpResponseException {
-        return _run("applyChanges", kw);
+        return parseDict(_run("applyChanges", kw));
     }
 
 
     @Override
     public JSONObject start(JSONObject kw) throws UnknownHttpResponseException {
-        return _run("start", kw);
+        return parseDict(_run("start", kw));
     }
 
 
     @Override
     public JSONObject chunk() throws UnknownHttpResponseException {
         JSONObject co = new JSONObject();
-        return _run("chunk", co);
+        return parseDict(_run("chunk", co));
     }
 
 
@@ -116,41 +98,47 @@ public class RemoteServer extends HttpSyncer {
 
     @Override
     public JSONObject sanityCheck2(JSONObject client) throws UnknownHttpResponseException {
-        return _run("sanityCheck2", client);
+        return parseDict(_run("sanityCheck2", client));
     }
-
 
     @Override
     public long finish() throws UnknownHttpResponseException {
+        return parseLong(_run("finish", new JSONObject()));
+    }
+
+    @Override
+    public void abort() throws UnknownHttpResponseException {
+        _run("abort", new JSONObject());
+    }
+
+    /** Python has dynamic type deduction, but we don't, so return String **/
+    private String _run(String cmd, JSONObject data) throws UnknownHttpResponseException {
+        HttpResponse ret = super.req(cmd, super.getInputStream(Utils.jsonToString(data)));
         try {
-            HttpResponse ret = super.req("finish", super.getInputStream("{}"));
-            String s = super.stream2String(ret.getEntity().getContent());
-            return Long.parseLong(s);
-        } catch (NumberFormatException e) {
-            return 0;
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+            return super.stream2String(ret.getEntity().getContent());
+        } catch (IllegalStateException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-
-    private JSONObject _run(String cmd, JSONObject data) throws UnknownHttpResponseException {
-        HttpResponse ret = super.req(cmd, super.getInputStream(Utils.jsonToString(data)));
+    /** Note: these conversion helpers aren't needed in libanki as type deduction occurs automatically there **/
+    private JSONObject parseDict(String s) {
         try {
-            String s = super.stream2String(ret.getEntity().getContent());
             if (!s.equalsIgnoreCase("null") && s.length() != 0) {
                 return new JSONObject(s);
             } else {
                 return new JSONObject();
             }
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } catch (JSONException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private long parseLong(String s) {
+        try {
+            return Long.parseLong(s);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 }

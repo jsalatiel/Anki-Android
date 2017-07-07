@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import timber.log.Timber;
-
 /**
  A Card is the ultimate entity subject to review; it encapsulates the scheduling parameters (from which to derive
  the next interval), the note it is derived from (from which field data is retrieved), its own ownership (which deck it
@@ -67,10 +65,15 @@ public class Card implements Cloneable {
     public static final int TYPE_NEW = 0;
     public static final int TYPE_LRN = 1;
     public static final int TYPE_REV = 2;
+    public static final int QUEUE_SUSP = -1;
+    public static final int QUEUE_USER_BRD = -2;
+    public static final int QUEUE_SCHED_BRD = -3;
 
     private Collection mCol;
     private double mTimerStarted;
-    private double mTimerStopped; // Not in LibAnki. Used to calculate time taken if activity is stopped/resumed.
+
+    // Not in LibAnki. Record time spent reviewing in order to restore when resuming.
+    private double mElapsedTime;
 
     // BEGIN SQL table entries
     private long mId;
@@ -287,7 +290,7 @@ public class Card implements Cloneable {
             JSONObject t = template();
             Object[] data;
             try {
-                data = new Object[] { mId, f.getId(), m.getLong("id"), mODid != 0l ? mODid : mDid, mOrd,
+                data = new Object[] { mId, f.getId(), m.getLong("id"), mODid != 0L ? mODid : mDid, mOrd,
                         f.stringTags(), f.joinedFields() };
             } catch (JSONException e) {
                 throw new RuntimeException(e);
@@ -349,10 +352,10 @@ public class Card implements Cloneable {
     /**
      * Time limit for answering in milliseconds.
      */
-    public long timeLimit() {
+    public int timeLimit() {
         JSONObject conf = mCol.getDecks().confForDid(mODid == 0 ? mDid : mODid);
         try {
-            return conf.getLong("maxTaken") * 1000;
+            return conf.getInt("maxTaken") * 1000;
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -371,13 +374,8 @@ public class Card implements Cloneable {
     /*
      * Time taken to answer card, in integer MS.
      */
-    public long timeTaken() {
-        long total = (long) ((Utils.now() - mTimerStarted) * 1000);
-        // Workaround for 1449. Ensure we don't return negative times.
-        // TODO: Find the real cause of negative time taken.
-        if (total < 0) {
-            total = timeLimit();
-        }
+    public int timeTaken() {
+        int total = (int) ((Utils.now() - mTimerStarted) * 1000);
         return Math.min(total, timeLimit());
     }
 
@@ -413,18 +411,27 @@ public class Card implements Cloneable {
         return s.substring(pos + target.length()).trim();
     }
 
+    /**
+     * Save the currently elapsed reviewing time so it can be restored on resume.
+     *
+     * Use this method whenever a review session (activity) has been paused. Use the resumeTimer()
+     * method when the session resumes to start counting review time again.
+     */
     public void stopTimer() {
-        mTimerStopped = Utils.now();
+        mElapsedTime = Utils.now() - mTimerStarted;
     }
 
 
+    /**
+     * Resume the timer that counts the time spent reviewing this card.
+     *
+     * Unlike the desktop client, AnkiDroid must pause and resume the process in the middle of
+     * reviewing. This method is required to keep track of the actual amount of time spent in
+     * the reviewer and *must* be called on resume before any calls to timeTaken() take place
+     * or the result of timeTaken() will be wrong.
+     */
     public void resumeTimer() {
-        if (!Double.isNaN(mTimerStarted) && !Double.isNaN(mTimerStopped)) {
-            mTimerStarted += Utils.now() - mTimerStopped;
-            mTimerStopped = Double.NaN;
-        } else {
-            Timber.i("Card Timer: nothing to resume");
-        }
+        mTimerStarted = Utils.now() - mElapsedTime;
     }
 
     public void setTimerStarted(double timeStarted){ mTimerStarted = timeStarted; }
@@ -621,11 +628,11 @@ public class Card implements Cloneable {
 
 
     // A list of class members to skip in the toString() representation
-    public static final Set<String> SKIP_PRINT = new HashSet<String>(Arrays.asList("SKIP_PRINT", "$assertionsDisabled", "TYPE_LRN",
+    public static final Set<String> SKIP_PRINT = new HashSet<>(Arrays.asList("SKIP_PRINT", "$assertionsDisabled", "TYPE_LRN",
             "TYPE_NEW", "TYPE_REV", "mNote", "mQA", "mCol", "mTimerStarted", "mTimerStopped"));
 
     public String toString() {
-        List<String> members = new ArrayList<String>();
+        List<String> members = new ArrayList<>();
         for (Field f : this.getClass().getDeclaredFields()) {
             try {
                 // skip non-useful elements
@@ -633,9 +640,7 @@ public class Card implements Cloneable {
                     continue;
                 }
                 members.add(String.format("'%s': %s", f.getName(), f.get(this)));
-            } catch (IllegalAccessException e) {
-                members.add(String.format("'%s': %s", f.getName(), "N/A"));
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 members.add(String.format("'%s': %s", f.getName(), "N/A"));
             }
         }

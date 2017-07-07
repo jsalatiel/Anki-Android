@@ -190,10 +190,23 @@ public class AudioView extends LinearLayout {
 
 
     public void notifyStopRecord() {
+        if (mRecorder != null && mStatus == Status.RECORDING) {
+            mRecorder.stop();
+            mStatus = Status.IDLE;
+            if (mOnRecordingFinishEventListener != null) {
+                mOnRecordingFinishEventListener.onRecordingFinish(AudioView.this);
+            }
+        }
         mPlayPause.update();
         mStop.update();
         if (mRecord != null) {
             mRecord.update();
+        }
+    }
+
+    public void notifyReleaseRecorder() {
+        if (mRecorder != null) {
+            mRecorder.release();
         }
     }
 
@@ -396,13 +409,7 @@ public class AudioView extends LinearLayout {
 
                     case RECORDING:
                         setImageResource(mResRecordStopImage);
-                        mRecorder.stop();
-                        mStatus = Status.IDLE; // Back to idle, so if play
-                                               // pressed, initialize player
                         notifyStopRecord();
-                        if (mOnRecordingFinishEventListener != null) {
-                            mOnRecordingFinishEventListener.onRecordingFinish(AudioView.this);
-                        }
                         break;
 
                     default:

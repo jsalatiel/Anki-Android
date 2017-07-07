@@ -48,7 +48,7 @@ import com.ichi2.anki.multimediacard.language.LanguagesListerGlosbe;
 import com.ichi2.anki.runtimetools.TaskOperations;
 import com.ichi2.anki.web.HttpFetcher;
 import com.ichi2.async.Connection;
-import com.ichi2.utils.HtmlUtil;
+import com.ichi2.libanki.Utils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -102,7 +102,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
         setContentView(R.layout.activity_translation);
 
         try {
-            mSource = getIntent().getExtras().getString(EXTRA_SOURCE).toString();
+            mSource = getIntent().getExtras().getString(EXTRA_SOURCE);
         } catch (Exception e) {
             mSource = "";
         }
@@ -123,7 +123,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
         mLanguageLister = new LanguagesListerGlosbe(this);
 
         mSpinnerFrom = new Spinner(this);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                 mLanguageLister.getLanguages());
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mSpinnerFrom.setAdapter(adapter);
@@ -134,7 +134,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
         linearLayout.addView(tvTo);
 
         mSpinnerTo = new Spinner(this);
-        ArrayAdapter<String> adapterTo = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item,
+        ArrayAdapter<String> adapterTo = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                 mLanguageLister.getLanguages());
         adapterTo.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mSpinnerTo.setAdapter(adapterTo);
@@ -300,7 +300,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
 
 
     private static ArrayList<String> parseJson(Response resp, String languageCodeTo) {
-        ArrayList<String> res = new ArrayList<String>();
+        ArrayList<String> res = new ArrayList<>();
 
         /*
          * The algorithm below includes the parsing of glosbe results. Glosbe.com returns a list of different phrases in
@@ -330,7 +330,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
                         continue;
                     }
                     if (meaning.getLanguage().contentEquals(desiredLang)) {
-                        String unescappedString = HtmlUtil.unescape(meaning.getText());
+                        String unescappedString = Utils.unescape(meaning.getText());
                         res.add(unescappedString);
                     }
                 }
@@ -342,7 +342,7 @@ public class TranslationActivity extends FragmentActivity implements DialogInter
                     continue;
                 }
                 if (phrase.getLanguage().contentEquals(desiredLang)) {
-                    String unescappedString = HtmlUtil.unescape(phrase.getText());
+                    String unescappedString = Utils.unescape(phrase.getText());
                     res.add(unescappedString);
                 }
             }

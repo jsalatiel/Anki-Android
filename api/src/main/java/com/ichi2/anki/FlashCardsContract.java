@@ -108,6 +108,7 @@ import android.net.Uri;
  */
 public class FlashCardsContract {
     public static final String AUTHORITY = "com.ichi2.anki.flashcards";
+    public static final String READ_WRITE_PERMISSION = "com.ichi2.anki.permission.READ_WRITE_DATABASE";
 
     /**
      * A content:// style uri to the authority for the flash card provider
@@ -125,8 +126,9 @@ public class FlashCardsContract {
      * note can be directly accessed. If no ID is appended the content provides functions return
      * all the notes that match the query as defined in {@code selection} argument in the
      * {@code query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder)} call.
-     * The {@code selectionArgs} parameter is always ignored. The query syntax that must go in the
-     * {@code selection} argument is described
+     * For queries, the {@code selectionArgs} parameter can contain an optional selection statement for the notes table
+     * in the sql database. E.g. "mid = 12345678" could be used to limit to a particular model ID.
+     * The {@code selection} parameter is an optional search string for the Anki browser. The syntax is described
      * <a href="http://ankisrs.net/docs/manual.html#searching">in the search section of the Anki manual</a>.
      * <p/>
      * <p>
@@ -273,6 +275,12 @@ public class FlashCardsContract {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, "notes");
 
         /**
+         * The content:// style URI for notes, but with a direct SQL query to the notes table instead of accepting
+         * a query in the libanki browser search syntax like the main URI #CONTENT_URI does.
+         */
+        public static final Uri CONTENT_URI_V2 = Uri.withAppendedPath(AUTHORITY_URI, "notes_v2");
+
+        /**
          * This is the ID of the note. It is the same as the note ID in Anki. This ID can be
          * used for accessing the data of a note using the URI
          * "content://com.ichi2.anki.flashcards/notes/&lt;ID&gt;/data
@@ -311,6 +319,11 @@ public class FlashCardsContract {
          * MIME type used for notes.
          */
         public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.com.ichi2.anki.note";
+
+        /**
+         * Used only by bulkInsert() to specify which deck the notes should be placed in
+         */
+        public static final String DECK_ID_QUERY_PARAM = "deckId";
     }
 
 
@@ -335,15 +348,13 @@ public class FlashCardsContract {
      * </tr>
      * <td>String</td>
      * <td>{@link #CSS}</td>
-     * <td>CSS styling code which is shared across all the templates
-     * </td>
+     * <td>CSS styling code which is shared across all the templates</td>
      * </tr>
      * <tr>
      * <td>String</td>
      * <td>{@link #FIELD_NAMES}</td>
      * <td>read-only</td>
-     * <td>Names of all the fields, separate by the 0x1f character
-     * </td>
+     * <td>Names of all the fields, separate by the 0x1f character</td>
      * </tr>
      * <tr>
      * <td>Integer</td>
@@ -351,6 +362,36 @@ public class FlashCardsContract {
      * <td>read-only</td>
      * <td>Number of card templates, which corresponds to the number of rows in the templates table
      * </td>
+     * </tr>
+     * <tr>
+     * <td>Long</td>
+     * <td>{@link #DECK_ID}</td>
+     * <td>read-only</td>
+     * <td>The default deck that cards should be added to</td>
+     * </tr>
+     * <tr>
+     * <td>Integer</td>
+     * <td>{@link #SORT_FIELD_INDEX}</td>
+     * <td>read-only</td>
+     * <td>Which field is used as the main sort field</td>
+     * </tr>
+     * <tr>
+     * <td>Integer</td>
+     * <td>{@link #TYPE}</td>
+     * <td>read-only</td>
+     * <td>0 for normal model, 1 for cloze model</td>
+     * </tr>
+     * <tr>
+     * <td>String</td>
+     * <td>{@link #LATEX_POST}</td>
+     * <td>read-only</td>
+     * <td>Code to go at the end of LaTeX renderings in Anki Desktop</td>
+     * </tr>
+     * <tr>
+     * <td>String</td>
+     * <td>{@link #LATEX_PRE}</td>
+     * <td>read-only</td>
+     * <td>Code to go at the front of LaTeX renderings in Anki Desktop</td>
      * </tr>
      * </table>
      * <p/>
@@ -409,9 +450,16 @@ public class FlashCardsContract {
          */
         public static final String _ID = "_id";
         public static final String NAME = "name";
+        public static final String FIELD_NAME = "field_name";
         public static final String FIELD_NAMES = "field_names";
         public static final String NUM_CARDS = "num_cards";
         public static final String CSS = "css";
+        public static final String SORT_FIELD_INDEX = "sort_field_index";
+        public static final String TYPE = "type";
+        public static final String LATEX_POST = "latex_post";
+        public static final String LATEX_PRE = "latex_pre";
+        public static final String NOTE_COUNT = "note_count";
+
         /**
          * The deck ID that is selected by default when adding new notes with this model.
          * This is only used when the "Deck for new cards" preference is set to "Decide by note type"
@@ -424,7 +472,11 @@ public class FlashCardsContract {
                 FIELD_NAMES,
                 NUM_CARDS,
                 CSS,
-                DECK_ID};
+                DECK_ID,
+                SORT_FIELD_INDEX,
+                TYPE,
+                LATEX_POST,
+                LATEX_PRE};
 
         /**
          * MIME type used for a model.
@@ -502,6 +554,8 @@ public class FlashCardsContract {
          * Optional alternative definition of the template for the answer when rendered with the browser
          */
         public static final String BROWSER_ANSWER_FORMAT = "browser_answer_format";
+
+        public static final String CARD_COUNT = "card_count";
 
 
         /**
@@ -925,8 +979,12 @@ public class FlashCardsContract {
      * <tr>
      * <td>String</td>
      * <td>{@link #DECK_NAME}</td>
-     * <td>read-only</td>
      * <td>This is the name of the Deck as the user usually sees it.
+     * </tr>
+     * <tr>
+     * <td>String</td>
+     * <td>{@link #DECK_DESC}</td>
+     * <td>The deck description shown on the overview page</td>
      * </tr>
      * <tr>
      * <td>JSONArray</td>
@@ -939,6 +997,12 @@ public class FlashCardsContract {
      * <td>{@link #OPTIONS}</td>
      * <td>read-only</td>
      * <td>These are the options of the deck.
+     * </tr>
+     * <tr>
+     * <td>Boolean</td>
+     * <td>{@link #DECK_DYN}</td>
+     * <td>read-only</td>
+     * <td>Whether or not the deck is a filtered deck</td>
      * </tr>
      * </table>
      *
@@ -1035,11 +1099,23 @@ public class FlashCardsContract {
          */
         public static final String OPTIONS = "options";
 
+        /**
+         * 1 if dynamic (AKA filtered) deck
+         */
+        public static final String DECK_DYN = "deck_dyn";
+
+        /**
+         * Deck description
+         */
+        public static final String DECK_DESC = "deck_desc";
+
         public static final String[] DEFAULT_PROJECTION = {
                 DECK_NAME,
                 DECK_ID,
                 DECK_COUNTS,
-                OPTIONS
+                OPTIONS,
+                DECK_DYN,
+                DECK_DESC
         };
 
 

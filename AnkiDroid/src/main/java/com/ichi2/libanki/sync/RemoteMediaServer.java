@@ -17,10 +17,12 @@
 
 package com.ichi2.libanki.sync;
 
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.text.TextUtils;
 
-
 import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.anki.exception.MediaSyncException;
 import com.ichi2.anki.exception.UnknownHttpResponseException;
 import com.ichi2.async.Connection;
 import com.ichi2.libanki.Collection;
@@ -56,13 +58,20 @@ public class RemoteMediaServer extends HttpSyncer {
 
     @Override
     public String syncURL() {
+        // Allow user to specify custom sync server
+        SharedPreferences userPreferences = AnkiDroidApp.getSharedPrefs(AnkiDroidApp.getInstance());
+        if (userPreferences!= null && userPreferences.getBoolean("useCustomSyncServer", false)) {
+            Uri mediaSyncBase = Uri.parse(userPreferences.getString("syncMediaUrl", Consts.SYNC_MEDIA_BASE));
+            return mediaSyncBase.toString() + "/";
+        }
+        // Usual case
         return Consts.SYNC_MEDIA_BASE;
     }
 
 
-    public JSONObject begin() throws UnknownHttpResponseException {
+    public JSONObject begin() throws UnknownHttpResponseException, MediaSyncException {
         try {
-            mPostVars = new HashMap<String, Object>();
+            mPostVars = new HashMap<>();
             mPostVars.put("k", mHKey);
             mPostVars.put("v",
                     String.format(Locale.US, "ankidroid,%s,%s", VersionUtils.getPkgVersionName(), Utils.platDesc()));
@@ -72,27 +81,23 @@ public class RemoteMediaServer extends HttpSyncer {
             JSONObject ret = _dataOnly(jresp, JSONObject.class);
             mSKey = ret.getString("sk");
             return ret;
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
 
     // args: lastUsn
-    public JSONArray mediaChanges(int lastUsn) throws UnknownHttpResponseException {
+    public JSONArray mediaChanges(int lastUsn) throws UnknownHttpResponseException, MediaSyncException {
         try {
-            mPostVars = new HashMap<String, Object>();
+            mPostVars = new HashMap<>();
             mPostVars.put("sk", mSKey);
 
             HttpResponse resp = super.req("mediaChanges",
                     super.getInputStream(Utils.jsonToString(new JSONObject().put("lastUsn", lastUsn))));
             JSONObject jresp = new JSONObject(super.stream2String(resp.getEntity().getContent()));
             return _dataOnly(jresp, JSONArray.class);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -122,30 +127,26 @@ public class RemoteMediaServer extends HttpSyncer {
     }
 
 
-    public JSONArray uploadChanges(File zip) throws UnknownHttpResponseException {
+    public JSONArray uploadChanges(File zip) throws UnknownHttpResponseException, MediaSyncException {
         try {
             // no compression, as we compress the zip file instead
             HttpResponse resp = super.req("uploadChanges", new FileInputStream(zip), 0);
             JSONObject jresp = new JSONObject(super.stream2String(resp.getEntity().getContent()));
             return _dataOnly(jresp, JSONArray.class);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         }
     }
 
 
     // args: local
-    public String mediaSanity(int lcnt) throws UnknownHttpResponseException {
+    public String mediaSanity(int lcnt) throws UnknownHttpResponseException, MediaSyncException {
         try {
             HttpResponse resp = super.req("mediaSanity",
                     super.getInputStream(Utils.jsonToString(new JSONObject().put("local", lcnt))));
             JSONObject jresp = new JSONObject(super.stream2String(resp.getEntity().getContent()));
             return _dataOnly(jresp, String.class);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (JSONException | IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -166,13 +167,12 @@ public class RemoteMediaServer extends HttpSyncer {
      *         returnType.
      */
     @SuppressWarnings("unchecked")
-    private <T> T _dataOnly(JSONObject resp, Class<T> returnType) {
+    private <T> T _dataOnly(JSONObject resp, Class<T> returnType) throws MediaSyncException {
         try {
             if (!TextUtils.isEmpty(resp.optString("err"))) {
                 String err = resp.getString("err");
                 mCol.log("error returned: " + err);
-                throw new RuntimeException("SyncError:" + err);
-                // TODO: Should probably define a new exception and handle it accordingly
+                throw new MediaSyncException("SyncError:" + err);
             }
             if (returnType == String.class) {
                 return (T) resp.getString("data");

@@ -61,6 +61,7 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
     private JSONObject mDeck;
     private Collection mCol;
     private boolean mAllowCommit = true;
+    private boolean mPrefChanged = false;
 
     private BroadcastReceiver mUnmountReceiver = null;
 
@@ -76,8 +77,8 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
 
     public class DeckPreferenceHack implements SharedPreferences {
 
-        private Map<String, String> mValues = new HashMap<String, String>();
-        private Map<String, String> mSummaries = new HashMap<String, String>();
+        private Map<String, String> mValues = new HashMap<>();
+        private Map<String, String> mSummaries = new HashMap<>();
 
 
         public DeckPreferenceHack() {
@@ -129,22 +130,22 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
                         Timber.i("Change value for key '" + entry.getKey() + "': " + entry.getValue());
                         if (entry.getKey().equals("search")) {
                             JSONArray ar = mDeck.getJSONArray("terms");
-                            ar.getJSONArray(0).put(0, (String) entry.getValue());
+                            ar.getJSONArray(0).put(0, entry.getValue());
                             mDeck.put("terms", ar);
                         } else if (entry.getKey().equals("limit")) {
                             JSONArray ar = mDeck.getJSONArray("terms");
-                            ar.getJSONArray(0).put(1, (Integer) entry.getValue());
+                            ar.getJSONArray(0).put(1, entry.getValue());
                             mDeck.put("terms", ar);
                         } else if (entry.getKey().equals("order")) {
                             JSONArray ar = mDeck.getJSONArray("terms");
                             ar.getJSONArray(0).put(2, Integer.parseInt((String) entry.getValue()));
                             mDeck.put("terms", ar);
                         } else if (entry.getKey().equals("resched")) {
-                            mDeck.put("resched", (Boolean) entry.getValue());
+                            mDeck.put("resched", entry.getValue());
                         } else if (entry.getKey().equals("stepsOn")) {
                             boolean on = (Boolean) entry.getValue();
                             if (on) {
-                                JSONArray steps =  StepsPreference.convertToJSON((String) mValues.get("steps"));
+                                JSONArray steps =  StepsPreference.convertToJSON(mValues.get("steps"));
                                 if (steps.length() > 0) {
                                     mDeck.put("delays", steps);
                                 }
@@ -313,7 +314,7 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
             return mValues.get(key);
         }
 
-        public List<OnSharedPreferenceChangeListener> listeners = new LinkedList<OnSharedPreferenceChangeListener>();
+        public List<OnSharedPreferenceChangeListener> listeners = new LinkedList<>();
 
 
         @Override
@@ -402,7 +403,7 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                finish();
+                closeDeckOptions();
                 return true;
         }
         return false;
@@ -413,6 +414,7 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         // update values on changed preference
         this.updateSummaries();
+        mPrefChanged = true;
     }
 
 
@@ -420,11 +422,19 @@ public class FilteredDeckOptions extends AppCompatPreferenceActivity implements 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
             Timber.i("DeckOptions - onBackPressed()");
-            finish();
-            ActivityTransitionAnimation.slide(this, ActivityTransitionAnimation.FADE);
+            closeDeckOptions();
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void closeDeckOptions() {
+        if (mPrefChanged) {
+            // Rebuild the filtered deck if a setting has changed
+            mCol.getSched().rebuildDyn(mCol.getDecks().selected());
+        }
+        finish();
+        ActivityTransitionAnimation.slide(this, ActivityTransitionAnimation.FADE);
     }
 
 

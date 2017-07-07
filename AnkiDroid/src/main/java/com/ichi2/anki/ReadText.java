@@ -18,7 +18,6 @@ package com.ichi2.anki;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
 import android.view.View;
@@ -26,7 +25,6 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.ichi2.themes.Themes;
 import com.ichi2.compat.CompatHelper;
 
 import java.lang.ref.WeakReference;
@@ -38,14 +36,14 @@ import timber.log.Timber;
 
 public class ReadText {
     private static TextToSpeech mTts;
-    private static ArrayList<Locale> availableTtsLocales = new ArrayList<Locale>();
+    private static ArrayList<Locale> availableTtsLocales = new ArrayList<>();
     private static String mTextToSpeak;
     private static WeakReference<Context> mReviewer;
     private static long mDid;
     private static int mOrd;
     private static int mQuestionAnswer;
     public static final String NO_TTS = "0";
-    public static ArrayList<String[]> sTextQueue = new ArrayList<String[]>();
+    public static ArrayList<String[]> sTextQueue = new ArrayList<>();
     public static HashMap<String, String> mTtsParams;
 
 
@@ -74,6 +72,76 @@ public class ReadText {
     }
 
 
+    /**
+     * Ask the user what language they want.
+     *
+     * @param text The text to be read
+     * @param did The deck id
+     * @param ord The card template ordinal
+     * @param qa The card question or card answer
+     */
+    public static void selectTts(String text, long did, int ord, int qa) {
+        mTextToSpeak = text;
+        mQuestionAnswer = qa;
+        mDid = did;
+        mOrd = ord;
+        Resources res = mReviewer.get().getResources();
+        final MaterialDialog.Builder builder = new MaterialDialog.Builder(mReviewer.get());
+        // Build the language list if it's empty
+        if (availableTtsLocales.isEmpty()) {
+            buildAvailableLanguages();
+        }
+        if (availableTtsLocales.size() == 0) {
+            Timber.w("ReadText.textToSpeech() no TTS languages available");
+            builder.content(res.getString(R.string.no_tts_available_message))
+                    .iconAttr(R.attr.dialogErrorIcon)
+                    .positiveText(res.getString(R.string.dialog_ok));
+        } else {
+            ArrayList<CharSequence> dialogItems = new ArrayList<>();
+            final ArrayList<String> dialogIds = new ArrayList<>();
+            // Add option: "no tts"
+            dialogItems.add(res.getString(R.string.tts_no_tts));
+            dialogIds.add(NO_TTS);
+            for (int i = 0; i < availableTtsLocales.size(); i++) {
+                dialogItems.add(availableTtsLocales.get(i).getDisplayName());
+                dialogIds.add(availableTtsLocales.get(i).getISO3Language());
+            }
+            String[] items = new String[dialogItems.size()];
+            dialogItems.toArray(items);
+
+            builder.title(res.getString(R.string.select_locale_title))
+                    .items(items)
+                    .itemsCallback(new MaterialDialog.ListCallback() {
+                        @Override
+                        public void onSelection(MaterialDialog materialDialog, View view, int which,
+                                                CharSequence charSequence) {
+                            String locale = dialogIds.get(which);
+                            Timber.d("ReadText.selectTts() user chose locale '%s'", locale);
+                            if (!locale.equals(NO_TTS)) {
+                                speak(mTextToSpeak, locale);
+                            }
+                            String language = getLanguage(mDid, mOrd, mQuestionAnswer);
+                            if (language.equals("")) { // No language stored
+                                MetaDB.storeLanguage(mReviewer.get(), mDid, mOrd, mQuestionAnswer, locale);
+                            } else {
+                                MetaDB.updateLanguage(mReviewer.get(), mDid, mOrd, mQuestionAnswer, locale);
+                            }
+
+                        }
+                    });
+        }
+        // Show the dialog after short delay so that user gets a chance to preview the card
+        final Handler handler = new Handler();
+        final int delay = 500;
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                builder.build().show();
+            }
+        }, delay);
+    }
+
+
     public static void textToSpeech(String text, long did, int ord, int qa) {
         mTextToSpeak = text;
         mQuestionAnswer = qa;
@@ -99,56 +167,13 @@ public class ReadText {
         }
 
         // Otherwise ask the user what language they want to use
-        Resources res = mReviewer.get().getResources();
-        final MaterialDialog.Builder builder = new MaterialDialog.Builder(mReviewer.get());
-        if (availableTtsLocales.size() == 0) {
-            Timber.w("ReadText.textToSpeech() no TTS languages available");
-            builder.content(res.getString(R.string.no_tts_available_message))
-                    .iconAttr(R.attr.dialogErrorIcon)
-                    .positiveText(res.getString(R.string.dialog_ok));
-        } else {
-            ArrayList<CharSequence> dialogItems = new ArrayList<CharSequence>();
-            final ArrayList<String> dialogIds = new ArrayList<String>();
-            // Add option: "no tts"
-            dialogItems.add(res.getString(R.string.tts_no_tts));
-            dialogIds.add(NO_TTS);
-            for (int i = 0; i < availableTtsLocales.size(); i++) {
-                dialogItems.add(availableTtsLocales.get(i).getDisplayName());
-                dialogIds.add(availableTtsLocales.get(i).getISO3Language());
-            }
-            String[] items = new String[dialogItems.size()];
-            dialogItems.toArray(items);
-
-            builder.title(res.getString(R.string.select_locale_title))
-                    .items(items)
-                    .itemsCallback(new MaterialDialog.ListCallback() {
-                        @Override
-                        public void onSelection(MaterialDialog materialDialog, View view, int which,
-                                CharSequence charSequence) {
-                            String locale = dialogIds.get(which);
-                            Timber.d("ReadText.textToSpeech() user chose locale '%s'", locale);
-                            if (!locale.equals(NO_TTS)) {
-                                speak(mTextToSpeak, locale);
-                            }
-                            MetaDB.storeLanguage(mReviewer.get(), mDid, mOrd, mQuestionAnswer, locale);
-                        }
-                    });
-        }
-        // Show the dialog after short delay so that user gets a chance to preview the card
-        final Handler handler = new Handler();
-        final int delay = 500;
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                builder.build().show();
-            }
-        }, delay);
+        selectTts(mTextToSpeak, mDid, mOrd, mQuestionAnswer);
     }
 
 
     public static void initializeTts(Context context) {
         // Store weak reference to Activity to prevent memory leak
-        mReviewer = new WeakReference<Context>(context);
+        mReviewer = new WeakReference<>(context);
         // Create new TTS object and setup its onInit Listener
         mTts = new TextToSpeech(context, new TextToSpeech.OnInitListener() {
             @Override
@@ -170,7 +195,7 @@ public class ReadText {
                 CompatHelper.getCompat().setTtsOnUtteranceProgressListener(mTts);
             }
         });
-        mTtsParams = new HashMap<String, String>();
+        mTtsParams = new HashMap<>();
         mTtsParams.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "stringId");
         // Show toast that it's getting initialized, as it can take a while before the sound plays the first time
         Toast.makeText(context, context.getString(R.string.initializing_tts), Toast.LENGTH_LONG).show();

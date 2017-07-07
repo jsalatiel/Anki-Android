@@ -45,26 +45,26 @@
   <string name="vague_error">Chyba</string>
   <string name="retry">Opakovat</string>
   <string name="cancel">Zrušit</string>
-  <string name="loading_shared_decks">Načítání dostupných sdílených balíčků...</string>
   <string name="terms_and_conditions"><a href="https://ankiweb.net/account/terms">Obchodní podmínky</a></string>
   <string name="menu_get_shared_decks">Získat sdílené balíčky</string>
   <string name="connection_error_message">Došlo k síťové chybě.</string>
   <string name="not_logged_in_title">Přihlasit se k AnkiWeb</string>
-  <string name="login_create_account_message">Musíte se přihlásit k účtu AnkiWeb. Účet můžete vytvořit v dalším kroku.</string>
-  <string name="no_email_client">Žádný e-mailový klient není k dispozici</string>
+  <string name="login_create_account_message">Musíte se přihlásit ke svému účtu AnkiWeb, abyste mohli sychronizovat svá data v cloudu. Účet můžete vytvořit v dalším kroku.</string>
+  <!-- MyAccount.java -->
   <string name="username">Emailová adresa</string>
   <string name="username_repeat">Zopakujte e-mailovou adresu</string>
   <string name="password">Heslo</string>
   <string name="password_repeat">Opakujte heslo</string>
   <string name="log_in">Přihlášení</string>
   <string name="sign_up_description">Nemáte ještě účet AnkiWeb? Je zdarma.</string>
+  <string name="sign_up_not_affiliated">Poznámka: Služba AnkiWeb není součástí AnkiDroid a naopak. Jedná se o dvě samostatné služby</string>
   <string name="sign_up">Zaregistrovat se</string>
-  <string name="sign_up_terms">Kliknutím na <i>Zaregistrujte se</i> potvrdíte, že jste si přečetl a souhlasíte s našimi <a href="https://ankiweb.net/account/terms">podmínkami používání</a>.</string>
   <string name="logged_as">Přihlášen jako</string>
   <string name="log_out">Odhlásit se</string>
   <string name="alert_logging_message">Probíhá přihlašování, čekejte prosím...</string>
   <string name="invalid_username_password">Neplatná e-mailová adresa nebo heslo.</string>
   <string name="reset_password">Obnovit heslo</string>
+  <!-- AndroidManifest.xml -->
   <string name="downloaddeck_search">Hledat</string>
   <string name="preferences_title">Nastavení</string>
   <string name="deckpreferences_title">Možnosti pro XXX</string>
@@ -114,11 +114,7 @@
   <string name="sync_sanity_failed">Po synchronizaci byla kolekce v nekonzistentním stavu. Chcete-li tento problém vyřešit, AnkiDroid vynutí úplnou synchronizaci. Vyberte si, na které straně chcete ponechat kolekci. Zvolte Zrušit, pokud chcete synchronizovat později.</string>
   <string name="sync_media_sanity_failed">Synchronizace multimédií dokončena, ale počet multimédií nesouhlasí se serverem. Další synchronizace multimédií bude úplná pro opravu případné chyby.</string>
   <string name="sync_media_error">Chyba synchronizace multimediálních dat.</string>
-  <string name="sync_media_unsupported">Složené názvy multimédii nejsou podporovány na Android 2.2 a nižší. Synchronizace multimédií byla pozastavena .</string>
-  <string name="register_error">Došlo k chybě. Opakujte akci později.</string>
-  <string name="register_title">Registrovat účet</string>
-  <string name="register_mismatch">Uživatelské jméno nebo hesla se neshodují nebo jsou prázdné. Zadejte znovu.</string>
-  <string name="registering_message">Vytváření účtu.\nProsím čekejte...</string>
+  <string name="sync_media_error_check">Chyba během synchronizace souborů médií. Doporučujeme provést kontrolu médií.</string>
   <string name="sync_sanity_local">Místní</string>
   <string name="sync_sanity_remote">Vzdálený</string>
   <string name="force_full_sync_title">Vynutit úplnou synchronizaci</string>

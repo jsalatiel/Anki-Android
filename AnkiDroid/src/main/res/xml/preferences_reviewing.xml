@@ -52,22 +52,23 @@
             android:title="@string/time_limit"
             app:max="9999"
             app:min="0" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="writeAnswersDisable"
-            android:summary="@string/write_answers_disable_summ"
-            android:title="@string/write_answers_disable" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_flashcard" >
+        <Preference
+            android:summary="@string/custom_buttons_summary"
+            android:title="@string/custom_buttons"
+            android:key="custom_buttons_link"/>
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="keepScreenOn"
             android:summary="@string/pref_keep_screen_on_summ"
             android:title="@string/pref_keep_screen_on" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="fullscreenReview"
-            android:summary="@string/fullscreen_review_summ"
+        <ListPreference
+            android:defaultValue="0"
+            android:key="fullscreenMode"
+            android:summary=""
+            android:entries="@array/full_screen_mode_labels"
+            android:entryValues="@array/full_screen_mode_values"
             android:title="@string/fullscreen_review" />
         <CheckBoxPreference
             android:defaultValue="false"
@@ -81,7 +82,7 @@
         <com.ichi2.ui.SeekBarPreference
             android:defaultValue="100"
             android:key="cardZoom"
-            android:max="150"
+            android:max="300"
             android:summary="@string/preference_summary_percentage"
             android:text=" %"
             android:title="@string/card_zoom"
@@ -99,16 +100,27 @@
         <com.ichi2.ui.SeekBarPreference
             android:defaultValue="100"
             android:key="answerButtonSize"
-            android:max="170"
+            android:max="200"
             android:summary="@string/preference_summary_percentage"
             android:text=" %"
             android:title="@string/button_size"
             app:interval="10"
-            app:min="100" />                
+            app:min="100" />
+        <ListPreference
+            android:defaultValue="bottom"
+            android:entries="@array/answer_buttons_position_labels"
+            android:entryValues="@array/answer_buttons_position"
+            android:key="@string/answer_buttons_position_preference"
+            android:title="@string/answer_buttons_position" />
         <CheckBoxPreference
             android:key="showProgress"
             android:summary="@string/show_progress_summ"
             android:title="@string/show_progress" />
+        <CheckBoxPreference
+            android:key="showETA"
+            android:defaultValue="true"
+            android:summary="@string/show_eta_summ"
+            android:title="@string/show_eta" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_cat_whiteboard" >
         <com.ichi2.ui.SeekBarPreference

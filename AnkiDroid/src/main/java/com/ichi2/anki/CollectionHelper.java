@@ -16,15 +16,17 @@
 
 package com.ichi2.anki;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 
 import com.ichi2.anki.exception.StorageAccessException;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Storage;
-import com.ichi2.libanki.hooks.Hooks;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,13 +76,15 @@ public class CollectionHelper {
         return LazyHolder.INSTANCE;
     }
 
+
     /**
-     * Get the {@link Collection} instance, creating it if it doesn't exist, or if the database is closed.
-     *
-     * @param path path to the AnkiDroid file
+     * Get the single instance of the {@link Collection}, creating it if necessary  (lazy initialization).
+     * @param context context which can be used to get the setting for the path to the Collection
      * @return instance of the Collection
      */
-    private synchronized Collection getCol(String path) {
+    public synchronized Collection getCol(Context context) {
+        // Open collection
+        String path = getCollectionPath(context);
         if (!colIsOpen()) {
             // Check that the directory has been created and initialized
             try {
@@ -92,42 +96,40 @@ public class CollectionHelper {
             }
             // Open the database
             Timber.i("openCollection: %s", path);
-            mCollection = Storage.Collection(path, false, true);
+            mCollection = Storage.Collection(context, path, false, true);
         }
         return mCollection;
     }
 
-
     /**
-     * Get the single instance of the {@link Collection}, creating it if necessary  (lazy initialization)
-     * and also initialize the global Hooks object for which the Collection is dependent.
-     * @param context context which can be used to get the setting for the path to the Collection
-     * @return instance of the Collection
+     * Call getCol(context) inside try / catch statement.
+     * Send exception report and return null if there was an exception.
+     * @param context
+     * @return
      */
-    public synchronized Collection getCol(Context context) {
-        // Initialize hooks
-        Hooks.getInstance(context);
-        // Open collection
-        String path = getCollectionPath(context);
-        return getCol(path);
+    public synchronized Collection getColSafe(Context context) {
+        try {
+            return getCol(context);
+        } catch (Exception e) {
+            AnkiDroidApp.sendExceptionReport(e, "CollectionHelper.getColSafe");
+            return null;
+        }
     }
 
-
     /**
-     * Reopen the {@link Collection} after it's been opened at least once, and subsequently closed. If the
-     * Collection is in the open state then a warning is logged, and the existing instance is returned.
-     * This method is typically used when no Context is available to access the setting for the col path.
-     * @throws java.lang.IllegalStateException if it's the first time opening the collection
+     * Checks whether or not the Android 1MB limit for the cursor size was exceeded
+     * @param context
+     * @return
      */
-    public synchronized Collection reopenCollection() {
-        if (colIsOpen()) {
-            Timber.w("Reopening of collection requested while existing still instance open");
+    public synchronized boolean exceededCursorSizeLimit(Context context) {
+        try {
+            getCol(context);
+        } catch (IllegalStateException e) {
+            return true;
         }
-        if (mPath == null) {
-            throw new IllegalStateException("Attempted to reopen collection before it has been initialized");
-        }
-        return getCol(mPath);
+        return false;
     }
+
 
     /**
      * Close the {@link Collection}, optionally saving
@@ -204,7 +206,7 @@ public class CollectionHelper {
      * external storage directory.
      * @return the folder path
      */
-    private static String getDefaultAnkiDroidDirectory() {
+    public static String getDefaultAnkiDroidDirectory() {
         return new File(Environment.getExternalStorageDirectory(), "AnkiDroid").getAbsolutePath();
     }
 
@@ -232,5 +234,15 @@ public class CollectionHelper {
      */
     private static String getParentDirectory(String path) {
         return new File(path).getParentFile().getAbsolutePath();
+    }
+
+    /**
+     * Check if we have permission to access the external storage
+     * @param context
+     * @return
+     */
+    public static boolean hasStorageAccessPermission(Context context) {
+        return ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED;
     }
 }

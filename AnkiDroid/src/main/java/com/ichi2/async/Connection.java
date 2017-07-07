@@ -19,20 +19,17 @@
 package com.ichi2.async;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.PowerManager;
 
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.CollectionHelper;
 import com.ichi2.anki.R;
+import com.ichi2.anki.exception.MediaSyncException;
 import com.ichi2.anki.exception.UnknownHttpResponseException;
-import com.ichi2.anki.exception.UnsupportedSyncException;
 import com.ichi2.libanki.Collection;
-import com.ichi2.libanki.Decks;
 import com.ichi2.libanki.sync.FullSyncer;
 import com.ichi2.libanki.sync.HttpSyncer;
 import com.ichi2.libanki.sync.MediaSyncer;
@@ -45,18 +42,8 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashMap;
 
 import timber.log.Timber;
 
@@ -64,14 +51,11 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
 
     public static final int TASK_TYPE_LOGIN = 0;
     public static final int TASK_TYPE_SYNC = 1;
-    public static final int TASK_TYPE_REGISTER = 6;
-    public static final int TASK_TYPE_UPGRADE_DECKS = 7;
     public static final int CONN_TIMEOUT = 30000;
 
 
     private static Connection sInstance;
     private TaskListener mListener;
-    private CancelCallback mCancelCallback;
     private static boolean sIsCancelled;
     private static boolean sIsCancellable;
 
@@ -127,9 +111,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
         Timber.i("Connection onCancelled() method called");
         // Sync has ended so release the wake lock
         mWakeLock.release();
-        if (mCancelCallback != null) {
-            mCancelCallback.cancelAllConnections();
-        }
         if (mListener instanceof CancellableTaskListener) {
             ((CancellableTaskListener) mListener).onCancelled();
         }
@@ -182,12 +163,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
     }
 
 
-    public static Connection register(TaskListener listener, Payload data) {
-        data.taskType = TASK_TYPE_REGISTER;
-        return launchConnectionTask(listener, data);
-    }
-
-
     public static Connection sync(TaskListener listener, Payload data) {
         data.taskType = TASK_TYPE_SYNC;
         return launchConnectionTask(listener, data);
@@ -209,14 +184,8 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
             case TASK_TYPE_LOGIN:
                 return doInBackgroundLogin(data);
 
-            case TASK_TYPE_REGISTER:
-                return doInBackgroundRegister(data);
-
             case TASK_TYPE_SYNC:
                 return doInBackgroundSync(data);
-
-            case TASK_TYPE_UPGRADE_DECKS:
-                throw new RuntimeException("Upgrade decks no longer supported");
 
             default:
                 return null;
@@ -256,9 +225,7 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
                     valid = (hostkey != null) && (hostkey.length() > 0);
                 } catch (JSONException e) {
                     valid = false;
-                } catch (IllegalStateException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
+                } catch (IllegalStateException | IOException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -270,51 +237,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
             data.data = new String[] { username, hostkey };
         } else {
             data.success = false;
-        }
-        return data;
-    }
-
-
-    private Payload doInBackgroundRegister(Payload data) {
-        String username = (String) data.data[0];
-        String password = (String) data.data[1];
-        HttpSyncer server = new RemoteServer(this, null);
-        HttpResponse ret;
-        try {
-            ret = server.register(username, password);
-        } catch (UnknownHttpResponseException e) {
-            data.success = false;
-            data.result = new Object[] { "error", e.getResponseCode(), e.getMessage() };
-            return data;
-        }
-        String hostkey = null;
-        boolean valid = false;
-        String status = null;
-        if (ret != null) {
-            data.returnType = ret.getStatusLine().getStatusCode();
-            if (data.returnType == 200) {
-                try {
-                    JSONObject jo = (new JSONObject(server.stream2String(ret.getEntity().getContent())));
-                    status = jo.getString("status");
-                    if (status.equals("ok")) {
-                        hostkey = jo.getString("hkey");
-                        valid = (hostkey != null) && (hostkey.length() > 0);
-                    }
-                } catch (JSONException e) {
-                } catch (IllegalStateException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-        if (valid) {
-            data.success = true;
-            data.data = new String[] { username, hostkey };
-        } else {
-            data.success = false;
-            data.data = new String[] { status != null ? status : AnkiDroidApp.getAppResources().getString(
-                    R.string.connection_error_message) };
         }
         return data;
     }
@@ -332,7 +254,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
 
 
     private Payload doInBackgroundSync(Payload data) {
-        // for for doInBackgroundLoadDeckCounts if any
         sIsCancellable = true;
         Timber.d("doInBackgroundSync()");
         // Block execution until any previous background task finishes, or timeout after 5s
@@ -341,7 +262,8 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
         String hkey = (String) data.data[0];
         boolean media = (Boolean) data.data[1];
         String conflictResolution = (String) data.data[2];
-        Collection col = data.col;
+        // Use safe version that catches exceptions so that full sync is still possible
+        Collection col = CollectionHelper.getInstance().getColSafe(AnkiDroidApp.getInstance());
 
         boolean colCorruptFullSync = false;
         if (!CollectionHelper.getInstance().colIsOpen() || !ok) {
@@ -398,16 +320,15 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
                         Timber.i("Sync - fullsync - upload collection");
                         publishProgress(R.string.sync_preparing_full_sync_message);
                         Object[] ret = server.upload();
+                        col.reopen();
                         if (ret == null) {
                             data.success = false;
                             data.result = new Object[] { "genericError" };
-                            CollectionHelper.getInstance().reopenCollection();   // TODO: is this needed?
                             return data;
                         }
                         if (!ret[0].equals(HttpSyncer.ANKIWEB_STATUS_OK)) {
                             data.success = false;
                             data.result = ret;
-                            CollectionHelper.getInstance().reopenCollection();   // TODO: is this needed?
                             return data;
                         }
                     } else if (conflictResolution.equals("download")) {
@@ -417,19 +338,21 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
                         if (ret == null) {
                             data.success = false;
                             data.result = new Object[] { "genericError" };
-                            CollectionHelper.getInstance().reopenCollection();   // TODO: is this needed?
                             return data;
+                        }
+                        if (ret[0].equals("success")) {
+                            data.success = true;
+                            col.reopen();
                         }
                         if (!ret[0].equals("success")) {
                             data.success = false;
                             data.result = ret;
                             if (!colCorruptFullSync) {
-                                CollectionHelper.getInstance().reopenCollection();   // TODO: is this needed?
+                                col.reopen();
                             }
                             return data;
                         }
                     }
-                    col = CollectionHelper.getInstance().reopenCollection();   // TODO: is this needed?
                 } catch (OutOfMemoryError e) {
                     AnkiDroidApp.sendExceptionReport(e, "doInBackgroundSync-fullSync");
                     data.success = false;
@@ -476,10 +399,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
                             publishProgress(R.string.sync_media_success);
                         }
                     }
-                } catch (UnsupportedSyncException e) {
-                    mediaError = AnkiDroidApp.getAppResources().getString(R.string.sync_media_unsupported);
-                    AnkiDroidApp.getSharedPrefs(AnkiDroidApp.getInstance().getApplicationContext()).edit().putBoolean("syncFetchesMedia", false).commit();
-                    AnkiDroidApp.sendExceptionReport(e, "doInBackgroundSync-mediaSync");
                 } catch (RuntimeException e) {
                     if (timeoutOccured(e)) {
                         data.result = new Object[] {"connectionError" };
@@ -500,6 +419,12 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
                 data.data = new Object[] { conflictResolution, col, mediaError };
                 return data;
             }
+        } catch (MediaSyncException e) {
+            Timber.e("Media sync rejected by server");
+            data.success = false;
+            data.result = new Object[] {"mediaSyncServerError"};
+            AnkiDroidApp.sendExceptionReport(e, "doInBackgroundSync");
+            return data;
         } catch (UnknownHttpResponseException e) {
             Timber.e("doInBackgroundSync -- unknown response code error");
             e.printStackTrace();
@@ -524,14 +449,12 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
             }
             return data;
         } finally {
-            // Close collection to roll back any sync failures and
-            Timber.d("doInBackgroundSync -- closing collection on outer finally statement");
-            col.close(false);
+            // don't bump mod time unless we explicitly save
+            if (col != null) {
+                col.close(false);
+            }
             CollectionHelper.getInstance().unlockCollection();
-            Timber.d("doInBackgroundSync -- reopening collection on outer finally statement");
-            CollectionHelper.getInstance().reopenCollection();
         }
-
     }
 
 
@@ -594,13 +517,6 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
         }
 
 
-        public Payload(Object[] data, Collection col) {
-            this.data = data;
-            this.col = col;
-            success = true;
-        }
-
-
         public Payload(Object[] data) {
             this.data = data;
             success = true;
@@ -635,7 +551,7 @@ public class Connection extends BaseAsyncTask<Connection.Payload, Object, Connec
 
 
         public void setConnectionManager(ThreadSafeClientConnManager connectionManager) {
-            mConnectionManager = new WeakReference<ThreadSafeClientConnManager>(connectionManager);
+            mConnectionManager = new WeakReference<>(connectionManager);
         }
 
 

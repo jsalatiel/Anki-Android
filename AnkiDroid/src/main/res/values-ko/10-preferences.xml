@@ -39,6 +39,10 @@
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+  <!-- generic strings -->
+  <string name="disabled">사용하지 않음</string>
+  <string name="enabled">사용함</string>
+  <!-- preferences.xml categories-->
   <string name="pref_cat_general">AnkiDroid</string>
   <string name="pref_cat_general_summ">일반 설정</string>
   <string name="pref_cat_reviewing">복습</string>
@@ -47,8 +51,10 @@
   <string name="pref_cat_flashcard">디스플레이</string>
   <string name="pref_cat_whiteboard">칠판</string>
   <string name="pref_cat_automatic_display">자동 디스플레이 대답</string>
+  <string name="pref_cat_appearance">외관</string>
+  <string name="pref_cat_appearance_summ">기본 글꼴과 테마 변경</string>
+  <string name="pref_cat_themes">테마</string>
   <string name="pref_cat_fonts">글꼴</string>
-  <string name="pref_cat_fonts_summ">기본 글꼴 및 크기 변경</string>
   <string name="pref_cat_gestures">제스쳐</string>
   <string name="pref_cat_gestures_summ">버튼 대신 밀기와 두드리기 사용</string>
   <string name="pref_cat_actions">작업</string>
@@ -59,29 +65,38 @@
   <string name="pref_cat_plugins">플러그인</string>
   <string name="about_title">AnkiDroid에 대해서</string>
   <string name="about_version">버전: </string>
+  <!-- preferences.xml entries-->
   <string name="whiteboard_stroke_width">획 두께</string>
   <string name="whiteboard_black">검은 획</string>
   <string name="whiteboard_black_summ">야간 모드가 아니라면 메모리를 적게 사용</string>
   <string name="write_answers_disable">정답 타이핑 사용 안함</string>
   <string name="write_answers_disable_summ">\'정답 입력\' 필드가 있는 카드에서 키보드가 나타나는 것을 방지</string>
+  <string name="use_input_tag">카드에 정답 입력</string>
+  <string name="use_input_tag_summ">카드 안의 텍스트 입력 상자에다가 정답을 입력하도록 사용</string>
   <string name="text_selection_click">길게 누름과 관련된 차선책</string>
   <string name="text_selection_click_summ">긴 클릭을 통해서 텍스트를 선택할 수 없는 경우 이 항목을 활성화</string>
   <string name="dictionary">색인 사전</string>
   <string name="reset_languages">언어 재설정</string>
-  <string name="reset_languages_summ">모든 카드 묶음의 언어 기능(문장 읽어주기와 사전 기능) 재설정하기. 카드 묶음 선택창에서 특정 카드 묶음 재설정.</string>
+  <string name="reset_languages_summ">모든 카드 묶음에 할당된 언어(사전과 TTS) 초기화</string>
   <string name="reset_languages_question">모든 언어 설정을 재설정할까요?</string>
   <string name="reset_confirmation">모든 상태 재설정</string>
   <string name="card_zoom">카드 확대</string>
   <string name="image_zoom">이미지 확대</string>
   <string name="button_size">정답 버튼 크기</string>
   <string name="card_browser_font_size">카드 탐색기 글꼴 크기 조정</string>
-  <string name="col_path">컬렉션 저장 경로</string>
+  <string name="col_path">AnkiDroid 디렉토리</string>
   <string name="fullscreen_review">전체 화면 모드</string>
-  <string name="fullscreen_review_summ">시스템 상태 표시줄 숨기기</string>
+  <string name="full_screen_off">끔</string>
+  <string name="full_screen_system">시스템 바 숨기기</string>
+  <string name="full_screen_complete">시스템 바와 정답 버튼 숨기기</string>
+  <string name="full_screen_error_gestures">정답 버튼을 숨기려면 제스처를 사용하도록 해야 합니다.</string>
+  <string name="answer_buttons_position">Answer buttons position</string>
+  <string-array name="answer_buttons_position_labels">
+    <item>Top</item>
+    <item>Bottom</item>
+  </string-array>
   <string name="gestures">제스처 사용</string>
   <string name="gestures_summ">응답 및 카드 편집 등의 작업에 제스쳐 할당</string>
-  <string name="gestures_hide_answer_buttons">Hide answer buttons</string>
-  <string name="gestures_hide_answer_buttons_summ">Don’t show answer buttons when gestures are enabled</string>
   <string name="gestures_swipe_up">위로 밀기</string>
   <string name="gestures_swipe_down">아래로 밀기</string>
   <string name="gestures_swipe_left">왼쪽 밀기</string>
@@ -103,13 +118,14 @@
   <string name="sync_account">AnkiWeb 계정</string>
   <string name="sync_account_summ_logged_out">로그인 하지 않음</string>
   <string name="sync_account_summ_logged_in">%s</string>
-  <string name="automatic_sync_choice">Automatic synchronization</string>
-  <string name="automatic_sync_choice_summ">Sync automatically on app start/exit if the last sync was more than 10
-        minutes ago.</string>
+  <string name="automatic_sync_choice">자동 동기화</string>
+  <string name="automatic_sync_choice_summ">마지막 동기화로부터 10분이 넘었을 경우 앱 시작 및 종료시 자동으로 동기화</string>
   <string name="fix_hebrew_text">히브리어 모음에 대한 수정</string>
   <string name="fix_hebrew_text_summ">히브리어 모음을 올바르게 표시하기 위한 해결 방법입니다.</string>
   <string name="fix_hebrew_instructions">이 설정은 안드로이드의 RTL 알고리즘을 우회하여 히브리어 텍스트의 모음을 바르게 표시하게 합니다.\n\nTohu.ttf를 다운로드하여 직접 %s/fonts/ 폴더에 복사하세요.\n\n기존의 카드를 편집할 필요는 없습니다.</string>
   <string name="fix_hebrew_download_font">글꼴 다운로드</string>
+  <string name="day_theme">주간 테마</string>
+  <string name="night_theme">야간 테마</string>
   <string name="default_font">기본 글꼴</string>
   <string name="override_font">기본 글꼴 적용 가능성</string>
   <string name="language">언어</string>
@@ -122,7 +138,7 @@
   <string name="notification_minimum_cards_due_vibrate">진동</string>
   <string name="notification_minimum_cards_due_blink">깜빡이기</string>
   <string name="timeout_answer_text">자동으로 정답 나타내기</string>
-  <string name="timeout_answer_summ">사용자 입력 없이 자동으로 정답 보기</string>
+  <string name="timeout_answer_summ">Show answer automatically without user input. Delay includes time for automatically played audio files.</string>
   <string name="timeout_answer_seconds">정답을 표시할 시간</string>
   <string name="timeout_answer_seconds_summ">XXX s</string>
   <string name="timeout_question_seconds">다음 문제를 표시할 시간</string>
@@ -137,6 +153,8 @@
   <string name="show_estimates_summ">답변 버튼에 다음 복습 시간 표시</string>
   <string name="show_progress">남은 개수 표시</string>
   <string name="show_progress_summ">남은 카드 개수 표시</string>
+  <string name="show_eta">Show ETA</string>
+  <string name="show_eta_summ">Show remaining time</string>
   <string name="use_current">새 카드의 카드 묶음</string>
   <string name="new_spread">새 카드 위치</string>
   <string name="learn_cutoff">미리 학습하기 시간 설정</string>
@@ -149,13 +167,32 @@
   <string name="input_workaround_summ">HTML 입력 박스를 선택할 수 없는 문제와 관련된 차선책입니다. 일부 기기에서 문제를 일으킬 수 있습니다.</string>
   <string name="pref_keep_screen_on">화면 계속 유지</string>
   <string name="pref_keep_screen_on_summ">화면 시간 제한 해제</string>
-  <string name="fix_arabic_text">아랍어 디스플레이 개선</string>
-  <string name="fix_arabic_text_summ">제한적인 아랍어 지원과 관련된 차선책입니다. 활성화되면 카드를 편집할 수 없습니다.</string>
   <string name="convert_fen_text">체스 표기법 지원</string>
-  <string name="filter_google_translate">구글 번역기</string>
-  <string name="filter_google_translate_summ">원본 단어와 번역을 그대로 저장</string>
   <string name="convert_fen_text_summ">Forsyth–Edwards 표기법으로 체스판을 그립니다. 표기법은 [fen][/fen] 태그에서 묶어야 합니다.</string>
+  <string name="enable_api_title">AnkiDroid API를 사용하도록 설정</string>
+  <string name="enable_api_summary">사용자의 개입 없이 다른 앱이 AnkiDroid에 연결하고 데이터를 읽고 쓸 수 있도록 허용</string>
+  <string name="custom_buttons">앱 바 버튼</string>
+  <string name="custom_buttons_summary">앱 바에 어떠한 동작이 표시될 것인지 지정</string>
+  <string name="custom_buttons_setting_always_show">항상 표시</string>
+  <string name="custom_buttons_setting_if_room">Show if room</string>
+  <string name="custom_buttons_setting_menu_only">메뉴만</string>
+  <string name="reset_custom_buttons">기본값으로 초기화</string>
+  <!-- Advanced statistics settings -->
+  <string name="advanced_statistics_title">고급 통계</string>
+  <string name="enable_advanced_statistics_title">고급 통계 사용</string>
+  <string name="enable_advanced_statistics_summ">향후 복습의 시뮬레이션이나 계산에 기반한(옵션 사용할 경우), 또는 이미 예정된 향후 복습에 기반한(옵션 사용하지 않을 경우) 예측 통계를 표시</string>
+  <string name="advanced_forecast_stats_compute_n_days_title">처음 n일을 계산, 나머지는 시뮬레이트</string>
+  <string name="advanced_forecast_stats_compute_precision_title">계산의 정확도</string>
+  <string name="advanced_forecast_stats_mc_n_iterations_title">시뮬레이션 반복 횟수</string>
+  <!-- Custom sync server settings -->
+  <string name="custom_sync_server_title">임의의 동기화 서버</string>
+  <string name="custom_sync_server_enable_title">임의의 동기화 서버 사용</string>
+  <string name="custom_sync_server_enable_summary">독점 AnkiWeb 서비스를 사용하지 않기를 원하신다면 대체 서버를 여기에 지정할 수 있습니다.</string>
+  <string name="custom_sync_server_base_url_title">동기화 URL</string>
+  <string name="custom_sync_server_media_url_title">미디어 동기화 URL</string>
+  <!-- studyoptions -->
   <string name="studyoptions_limit_select_tags">태그 선택</string>
+  <!-- Deck configurations -->
   <string name="deck_conf_deck_description">꾸러미 설명</string>
   <string name="deck_conf_group">옵션 그룹</string>
   <plurals name="deck_conf_group_summ">
@@ -165,6 +202,7 @@
   <string name="deck_conf_rev_cards">복습 횟수</string>
   <string name="deck_conf_lps_cards">학습경과 시간</string>
   <string name="deck_conf_general">일반</string>
+  <string name="deck_conf_reminders">Reminders</string>
   <string name="deck_conf_steps">학습단계(분)</string>
   <string name="deck_conf_order">순서</string>
   <string name="deck_conf_new_cards_day">1일 새카드 수</string>
@@ -216,6 +254,8 @@
   <string name="deck_conf_cram_order">에 선택된 카드</string>
   <string name="deck_conf_cram_reschedule">일정을 다시</string>
   <string name="deck_conf_cram_reschedule_summ">이 카드묶음에서 내 대답에 근거에 재조정된 카드들</string>
-  <string name="deck_conf_cram_steps">사용자 정의 단계</string>
+  <string name="deck_conf_cram_steps">Custom steps (in minutes)</string>
   <string name="deck_conf_cram_steps_summ">사용자 정의 단계를 정의</string>
+  <string name="deck_conf_reminders_enabled">Enable reminder notifications for this deck</string>
+  <string name="deck_conf_reminders_time">Remind at</string>
 </resources>

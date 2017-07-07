@@ -16,7 +16,9 @@
 
 package com.ichi2.libanki;
 
-import android.content.ContentValues;
+import android.content.Context;
+
+import com.ichi2.compat.CompatHelper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -64,7 +66,7 @@ class AnkiExporter extends Exporter {
     Collection mSrc;
     String mMediaDir;
     int mCount;
-    ArrayList<String> mMediaFiles = new ArrayList<String>();
+    ArrayList<String> mMediaFiles = new ArrayList<>();
 
 
     public AnkiExporter(Collection col) {
@@ -84,15 +86,15 @@ class AnkiExporter extends Exporter {
      * @throws IOException
      */
 
-    public void exportInto(String path) throws JSONException, IOException {
+    public void exportInto(String path, Context context) throws JSONException, IOException {
         // create a new collection at the target
         new File(path).delete();
-        Collection dst = Storage.Collection(path);
+        Collection dst = Storage.Collection(context, path);
         mSrc = mCol;
         // find cards
-        long[] cids;
+        Long[] cids;
         if (mDid == null) {
-            cids = Utils.arrayList2array(mSrc.getDb().queryColumn(Long.class, "SELECT id FROM cards", 0));
+            cids = Utils.list2ObjectArray(mSrc.getDb().queryColumn(Long.class, "SELECT id FROM cards", 0));
         } else {
             cids = mSrc.getDecks().cids(mDid, true);
         }
@@ -105,11 +107,11 @@ class AnkiExporter extends Exporter {
         Timber.d("Copy cards");
         mSrc.getDb().getDatabase()
                 .execSQL("INSERT INTO DST_DB.cards select * from cards where id in " + Utils.ids2str(cids));
-        Set<Long> nids = new HashSet<Long>(mSrc.getDb().queryColumn(Long.class,
+        Set<Long> nids = new HashSet<>(mSrc.getDb().queryColumn(Long.class,
                 "select nid from cards where id in " + Utils.ids2str(cids), 0));
         // notes
         Timber.d("Copy notes");
-        ArrayList<Long> uniqueNids = new ArrayList<Long>(nids);
+        ArrayList<Long> uniqueNids = new ArrayList<>(nids);
         String strnids = Utils.ids2str(uniqueNids);
         mSrc.getDb().getDatabase().execSQL("INSERT INTO DST_DB.notes select * from notes where id in " + strnids);
         // remove system tags if not exporting scheduling info
@@ -117,7 +119,7 @@ class AnkiExporter extends Exporter {
             Timber.d("Stripping system tags from list");
             ArrayList<String> srcTags = mSrc.getDb().queryColumn(String.class,
                     "select tags from notes where id in " + strnids, 0);
-            ArrayList<Object[]> args = new ArrayList<Object[]>(srcTags.size());
+            ArrayList<Object[]> args = new ArrayList<>(srcTags.size());
             Object [] arg = new Object[2];
             for (int row = 0; row < srcTags.size(); row++) {
                 arg[0]=removeSystemTags(srcTags.get(row));
@@ -156,7 +158,7 @@ class AnkiExporter extends Exporter {
         }
         // decks
         Timber.d("Copy decks");
-        ArrayList<Long> dids = new ArrayList<Long>();
+        ArrayList<Long> dids = new ArrayList<>();
         if (mDid != null) {
             dids.add(mDid);
             for (Long x : mSrc.getDecks().children(mDid).values()) {
@@ -207,7 +209,13 @@ class AnkiExporter extends Exporter {
                 for (File f : new File(mMediaDir).listFiles()) {
                     String fname = f.getName();
                     if (fname.startsWith("_")) {
-                        media.put(fname, true);
+                        // Loop through every model that will be exported, and check if it contains a reference to f
+                        for (int idx = 0; idx < mid.size(); idx++) {
+                            if (_modelHasMedia(mSrc.getModels().get(idx), fname)) {
+                                media.put(fname, true);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -225,6 +233,36 @@ class AnkiExporter extends Exporter {
         dst.setMod();
         postExport();
         dst.close();
+    }
+
+    /**
+     * Returns whether or not the specified model contains a reference to the given media file.
+     * In order to ensure relatively fast operation we only check if the styling, front, back templates *contain* fname,
+     * and thus must allow for occasional false positives.
+     * @param model the model to scan
+     * @param fname the name of the media file to check for
+     * @return
+     * @throws JSONException
+     */
+    private boolean _modelHasMedia(JSONObject model, String fname) throws JSONException {
+        // Don't crash if the model is null
+        if (model == null) {
+            Timber.w("_modelHasMedia given null model");
+            return true;
+        }
+        // First check the styling
+        if (model.getString("css").contains(fname)) {
+            return true;
+        }
+        // If not there then check the templates
+        JSONArray tmpls = model.getJSONArray("tmpls");
+        for (int idx = 0; idx < tmpls.length(); idx++) {
+            JSONObject tmpl = tmpls.getJSONObject(idx);
+            if (tmpl.getString("qfmt").contains(fname) || tmpl.getString("afmt").contains(fname)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -265,7 +303,7 @@ public final class AnkiPackageExporter extends AnkiExporter {
 
 
     @Override
-    public void exportInto(String path) throws IOException, JSONException {
+    public void exportInto(String path, Context context) throws IOException, JSONException {
         // open a zip file
         ZipFile z = new ZipFile(path);
         // if all decks and scheduling included, full export
@@ -274,7 +312,7 @@ public final class AnkiPackageExporter extends AnkiExporter {
             media = exportVerbatim(z);
         } else {
             // otherwise, filter
-            media = exportFiltered(z, path);
+            media = exportFiltered(z, path, context);
         }
         // media map
         z.writeStr("media", Utils.jsonToString(media));
@@ -311,10 +349,10 @@ public final class AnkiPackageExporter extends AnkiExporter {
     }
 
 
-    private JSONObject exportFiltered(ZipFile z, String path) throws IOException, JSONException {
+    private JSONObject exportFiltered(ZipFile z, String path, Context context) throws IOException, JSONException {
         // export into the anki2 file
         String colfile = path.replace(".apkg", ".anki2");
-        super.exportInto(colfile);
+        super.exportInto(colfile, context);
         z.write(colfile, "collection.anki2");
         // and media
         prepareMedia();
@@ -336,11 +374,8 @@ public final class AnkiPackageExporter extends AnkiExporter {
             }
         }
         // tidy up intermediate files
-        new File(colfile).delete();
-        String p = path.replace(".apkg", ".media.ad.db2");
-        if (new File(p).exists()) {
-            new File(p).delete();
-        }
+        CompatHelper.getCompat().deleteDatabase(new File(colfile));
+        CompatHelper.getCompat().deleteDatabase(new File(path.replace(".apkg", ".media.ad.db2")));
         String tempPath = path.replace(".apkg", ".media");
         File file = new File(tempPath);
         if (file.exists()) {

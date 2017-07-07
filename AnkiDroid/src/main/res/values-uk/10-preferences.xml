@@ -39,6 +39,10 @@
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+  <!-- generic strings -->
+  <string name="disabled">Disabled</string>
+  <string name="enabled">Enabled</string>
+  <!-- preferences.xml categories-->
   <string name="pref_cat_general">AnkiDroid</string>
   <string name="pref_cat_general_summ">Основні налаштування</string>
   <string name="pref_cat_reviewing">Перегляд</string>
@@ -47,8 +51,10 @@
   <string name="pref_cat_flashcard">Відображення</string>
   <string name="pref_cat_whiteboard">Дошка</string>
   <string name="pref_cat_automatic_display">Автоматично відображати відповідь</string>
-  <string name="pref_cat_fonts">Шрифти</string>
-  <string name="pref_cat_fonts_summ">Змінити типовий шрифт і розмір</string>
+  <string name="pref_cat_appearance">Appearance</string>
+  <string name="pref_cat_appearance_summ">Change themes and default font</string>
+  <string name="pref_cat_themes">Themes</string>
+  <string name="pref_cat_fonts">Fonts</string>
   <string name="pref_cat_gestures">Жести</string>
   <string name="pref_cat_gestures_summ">Використовуйте дотики і проведення пальцем замість кнопок</string>
   <string name="pref_cat_actions">Дії</string>
@@ -59,29 +65,38 @@
   <string name="pref_cat_plugins">Втулки</string>
   <string name="about_title">Про AnkiDroid</string>
   <string name="about_version">Версія: </string>
+  <!-- preferences.xml entries-->
   <string name="whiteboard_stroke_width">Ширина штриха</string>
   <string name="whiteboard_black">Чорні штрихи</string>
   <string name="whiteboard_black_summ">Uses less memory, unless in night mode</string>
   <string name="write_answers_disable">Disable typing in answer</string>
   <string name="write_answers_disable_summ">Prevents keyboard from appearing on cards containing type-the-answer fields</string>
+  <string name="use_input_tag">Type answer into the card</string>
+  <string name="use_input_tag_summ">Use a text input box inside the card to type in the answer</string>
   <string name="text_selection_click">Long press workaround</string>
   <string name="text_selection_click_summ">Увімкніть, якщо ви не можете розпочати виділення тексту довгим натисненням</string>
   <string name="dictionary">Lookup dictionary</string>
   <string name="reset_languages">Reset languages</string>
-  <string name="reset_languages_summ">Скинути мовні налаштування (для тексту в мовлення та словників) для усіх колод. Для окремої колоди скидання здійснюється на екрані вибору колод</string>
+  <string name="reset_languages_summ">Reset language assignments (for text to speech and dictionaries) for all decks</string>
   <string name="reset_languages_question">Скинути всі мовні налаштування?</string>
   <string name="reset_confirmation">All states reset</string>
   <string name="card_zoom">Card zoom</string>
   <string name="image_zoom">Image zoom</string>
   <string name="button_size">Розмір кнопки відповіді</string>
   <string name="card_browser_font_size">Card browser font scaling</string>
-  <string name="col_path">Шлях до колекції</string>
+  <string name="col_path">AnkiDroid directory</string>
   <string name="fullscreen_review">Повноекранний режим</string>
-  <string name="fullscreen_review_summ">Приховувати рядок стану системи</string>
+  <string name="full_screen_off">Off</string>
+  <string name="full_screen_system">Hide the system bars</string>
+  <string name="full_screen_complete">Hide the system bars and answer buttons</string>
+  <string name="full_screen_error_gestures">You must enable gestures to hide the answer buttons</string>
+  <string name="answer_buttons_position">Answer buttons position</string>
+  <string-array name="answer_buttons_position_labels">
+    <item>Top</item>
+    <item>Bottom</item>
+  </string-array>
   <string name="gestures">Увімкнути жести</string>
   <string name="gestures_summ">Assign gestures to actions such as answering and editing cards.</string>
-  <string name="gestures_hide_answer_buttons">Hide answer buttons</string>
-  <string name="gestures_hide_answer_buttons_summ">Don’t show answer buttons when gestures are enabled</string>
   <string name="gestures_swipe_up">Ковзання вгору</string>
   <string name="gestures_swipe_down">Ковзати вниз</string>
   <string name="gestures_swipe_left">Ковзання ліворуч</string>
@@ -110,6 +125,8 @@
   <string name="fix_hebrew_text_summ">Вирішення проблеми з неправильним відображенням голосних на івриті.</string>
   <string name="fix_hebrew_instructions">Ця настройка обходить RTL(з права наліво) алгоритм Android, щоб правильно відображати текст з голосними на івриті .\n\nДля цього вам також необхідно завантажити шрифт Tohu.ttf і скопіювати його вручну в:\n%s/fonts/\n\nВам не доведеться змінювати свої карти.</string>
   <string name="fix_hebrew_download_font">Завантажити шрифт</string>
+  <string name="day_theme">Day theme</string>
+  <string name="night_theme">Night theme</string>
   <string name="default_font">Типовий шрифт</string>
   <string name="override_font">Default font applicability</string>
   <string name="language">Мова</string>
@@ -122,7 +139,7 @@
   <string name="notification_minimum_cards_due_vibrate">Vibrate</string>
   <string name="notification_minimum_cards_due_blink">Blink light</string>
   <string name="timeout_answer_text">Автоматичне відкриття відповіді</string>
-  <string name="timeout_answer_summ">Show answer automatically without user input</string>
+  <string name="timeout_answer_summ">Show answer automatically without user input. Delay includes time for automatically played audio files.</string>
   <string name="timeout_answer_seconds">Time to show answer</string>
   <string name="timeout_answer_seconds_summ">XXX s</string>
   <string name="timeout_question_seconds">Time to show next question</string>
@@ -137,6 +154,8 @@
   <string name="show_estimates_summ">Показати час наступного повторення вище кнопок відповіді</string>
   <string name="show_progress">Показати решту</string>
   <string name="show_progress_summ">Show remaining card count</string>
+  <string name="show_eta">Show ETA</string>
+  <string name="show_eta_summ">Show remaining time</string>
   <string name="use_current">Колода для нових карт</string>
   <string name="new_spread">Положення нової карти</string>
   <string name="learn_cutoff">Вчити наперед</string>
@@ -149,13 +168,32 @@
   <string name="input_workaround_summ">Workaround for focusing problems on HTML input boxes. Causes problems on several devices.</string>
   <string name="pref_keep_screen_on">Keep screen on</string>
   <string name="pref_keep_screen_on_summ">Disable screen timeout</string>
-  <string name="fix_arabic_text">Покращити відображення арабської</string>
-  <string name="fix_arabic_text_summ">Partial workaround for limited support of Arabic by Android platform. When activated it is not possible to modify cards.</string>
   <string name="convert_fen_text">Підтримка шахової нотації</string>
-  <string name="filter_google_translate">З Перекладача Google</string>
-  <string name="filter_google_translate_summ">Зберігати лише вихідне слово та переклад</string>
   <string name="convert_fen_text_summ">Draw chessboard from Forsyth–Edwards Notation. The notation must be enclosed in [fen][/fen] tags.</string>
+  <string name="enable_api_title">Enable AnkiDroid API</string>
+  <string name="enable_api_summary">Let other apps connect to AnkiDroid and read / write data without your intervention</string>
+  <string name="custom_buttons">App bar buttons</string>
+  <string name="custom_buttons_summary">Customize which actions appear in the app bar</string>
+  <string name="custom_buttons_setting_always_show">Always show</string>
+  <string name="custom_buttons_setting_if_room">Show if room</string>
+  <string name="custom_buttons_setting_menu_only">Menu only</string>
+  <string name="reset_custom_buttons">Reset to default</string>
+  <!-- Advanced statistics settings -->
+  <string name="advanced_statistics_title">Advanced statistics</string>
+  <string name="enable_advanced_statistics_title">Enable advanced statistics</string>
+  <string name="enable_advanced_statistics_summ">Display forecast statistics based on a computation or simulation of future reviews (enabled) or on the future reviews already scheduled (disabled).</string>
+  <string name="advanced_forecast_stats_compute_n_days_title">Compute first n days, simulate remainder</string>
+  <string name="advanced_forecast_stats_compute_precision_title">Precision of computation</string>
+  <string name="advanced_forecast_stats_mc_n_iterations_title">Number of iterations of the simulation</string>
+  <!-- Custom sync server settings -->
+  <string name="custom_sync_server_title">Custom sync server</string>
+  <string name="custom_sync_server_enable_title">Use custom sync server</string>
+  <string name="custom_sync_server_enable_summary">If you don\'t want to use the proprietary AnkiWeb service you can specify an alternative server here</string>
+  <string name="custom_sync_server_base_url_title">Sync url</string>
+  <string name="custom_sync_server_media_url_title">Media sync url</string>
+  <!-- studyoptions -->
   <string name="studyoptions_limit_select_tags">Виберіть мітки</string>
+  <!-- Deck configurations -->
   <string name="deck_conf_deck_description">Опис колоди</string>
   <string name="deck_conf_group">Options group</string>
   <plurals name="deck_conf_group_summ">
@@ -167,6 +205,7 @@
   <string name="deck_conf_rev_cards">Перегляди</string>
   <string name="deck_conf_lps_cards">Ляпси</string>
   <string name="deck_conf_general">Загальні</string>
+  <string name="deck_conf_reminders">Reminders</string>
   <string name="deck_conf_steps">Кроки (в хвилинах)</string>
   <string name="deck_conf_order">Порядок</string>
   <string name="deck_conf_new_cards_day">Нових карток/день</string>
@@ -220,6 +259,8 @@
   <string name="deck_conf_cram_order">картки вибрані за</string>
   <string name="deck_conf_cram_reschedule">Зміна розкладу</string>
   <string name="deck_conf_cram_reschedule_summ">Змінювати розклад для карток, ґрунтуючись на моїх відповідях в цій колоді</string>
-  <string name="deck_conf_cram_steps">Користувацькі інтервали</string>
+  <string name="deck_conf_cram_steps">Custom steps (in minutes)</string>
   <string name="deck_conf_cram_steps_summ">Визначити користувацькі інтервали</string>
+  <string name="deck_conf_reminders_enabled">Enable reminder notifications for this deck</string>
+  <string name="deck_conf_reminders_time">Remind at</string>
 </resources>

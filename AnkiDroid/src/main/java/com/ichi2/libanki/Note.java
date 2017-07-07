@@ -73,7 +73,7 @@ public class Note implements Cloneable {
             mModel = model;
             try {
                 mMid = model.getLong("id");
-                mTags = new ArrayList<String>();
+                mTags = new ArrayList<>();
                 mFields = new String[model.getJSONArray("flds").length()];
                 Arrays.fill(mFields, "");
             } catch (JSONException e) {
@@ -134,9 +134,9 @@ public class Note implements Cloneable {
         String sfld = Utils.stripHTMLMedia(mFields[mCol.getModels().sortIdx(mModel)]);
         String tags = stringTags();
         String fields = joinedFields();
-        if (mod == null && mCol.getDb().queryScalar(String.format(Locale.US,
+        if (mod == null && mCol.getDb().queryScalar(
                 "select 1 from notes where id = ? and tags = ? and flds = ?",
-                mId, tags, fields)) > 0) {
+                new String[]{Long.toString(mId), tags, fields}) > 0) {
             return;
         }
         long csum = Utils.fieldChecksum(mFields[0]);
@@ -154,7 +154,7 @@ public class Note implements Cloneable {
 
 
     public ArrayList<Card> cards() {
-        ArrayList<Card> cards = new ArrayList<Card>();
+        ArrayList<Card> cards = new ArrayList<>();
         Cursor cur = null;
         try {
             cur = mCol.getDb().getDatabase()
@@ -209,12 +209,12 @@ public class Note implements Cloneable {
     }
 
 
-    public String getitem(String key) {
+    public String getItem(String key) {
         return mFields[_fieldOrd(key)];
     }
 
 
-    public void setitem(String key, String value) {
+    public void setItem(String key, String value) {
         mFields[_fieldOrd(key)] = value;
     }
     
@@ -244,7 +244,7 @@ public class Note implements Cloneable {
 
 
     public void delTag(String tag) {
-        List<String> rem = new LinkedList<String>();
+        List<String> rem = new LinkedList<>();
         for (String t : mTags) {
             if (t.equalsIgnoreCase(tag)) {
                 rem.add(t);

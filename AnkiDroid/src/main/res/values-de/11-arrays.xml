@@ -58,8 +58,8 @@
     <item>Notiz löschen</item>
     <item>Medien abspielen</item>
     <item>Lernen beenden</item>
-    <item>Notiz zurückstellen</item>
-    <item>Notiz aussetzen</item>
+    <item>Notiz vorläufig aussetzen</item>
+    <item>Notiz dauerhaft aussetzen</item>
   </string-array>
   <string-array name="leech_action_labels">
     <item>Karte dauerhaft aussetzen</item>
@@ -75,19 +75,10 @@
     <item>Steigende Intervalle</item>
     <item>Sinkende Intervalle</item>
     <item>Meiste Fehlschläge</item>
-    <item>Hinzufügungsreihenfolge</item>
-    <item>Fälligkeitsreihenfolge</item>
+    <item>In Reihenfolge des Hinzufügens</item>
+    <item>Nach Fälligkeit</item>
     <item>Zuletzt hinzugefügte zuerst</item>
     <item>Relative Überfälligkeit</item>
-  </string-array>
-  <string-array name="custom_study_options_labels">
-    <item>Erhöhe das heutige Tageslimit an neuen Karten</item>
-    <item>Das Tageslimit an Wiederholungen erhöhen</item>
-    <item>Vergessene Karten nochmals lernen</item>
-    <item>Im Voraus lernen</item>
-    <item>Zufällige Kartenauswahl lernen</item>
-    <item>Zeige Vorschau von neuen Karten</item>
-    <item>Auf bestimmte Schlagworte beschränken</item>
   </string-array>
   <string-array name="add_to_cur_labels">
     <item>Aktuellen Stapel verwenden</item>
@@ -99,7 +90,15 @@
     <item>Neue Karten vor Wiederholungen</item>
   </string-array>
   <string-array name="override_font_labels">
-    <item>Wenn keine Schriftart auf Karte angegeben</item>
+    <item>Wenn keine Schriftart für Karte angegeben</item>
     <item>Immer</item>
+  </string-array>
+  <string-array name="day_theme_labels">
+    <item>Hell</item>
+    <item>Schlicht</item>
+  </string-array>
+  <string-array name="night_theme_labels">
+    <item>Schwarz</item>
+    <item>Dunkel</item>
   </string-array>
 </resources>

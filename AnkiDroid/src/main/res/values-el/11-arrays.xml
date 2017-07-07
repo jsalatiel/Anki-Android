@@ -80,15 +80,6 @@
     <item>Κατά σειρά πρόσφατης προσθήκης</item>
     <item>Relative overdueness</item>
   </string-array>
-  <string-array name="custom_study_options_labels">
-    <item>Αύξηση σημερινού ορίου νέων καρτών</item>
-    <item>Αύξηση σημερινού ορίου επαναλήψεων</item>
-    <item>Επανάληψη ξεχασμένων καρτών</item>
-    <item>Επανάληψη προς τα εμπρός</item>
-    <item>Μελέτη τυχαίας επιλογής καρτών</item>
-    <item>Προεπισκόπηση νέων καρτών</item>
-    <item>Περιορισμός σε συγκεκριμένες ετικέτες</item>
-  </string-array>
   <string-array name="add_to_cur_labels">
     <item>Use current deck</item>
     <item>Decide by note type</item>
@@ -101,5 +92,13 @@
   <string-array name="override_font_labels">
     <item>When no font specified on flashcards</item>
     <item>Always</item>
+  </string-array>
+  <string-array name="day_theme_labels">
+    <item>Light</item>
+    <item>Plain</item>
+  </string-array>
+  <string-array name="night_theme_labels">
+    <item>Black</item>
+    <item>Dark</item>
   </string-array>
 </resources>

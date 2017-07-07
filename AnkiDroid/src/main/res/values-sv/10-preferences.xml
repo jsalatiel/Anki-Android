@@ -39,6 +39,10 @@
 ~ this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <resources>
+  <!-- generic strings -->
+  <string name="disabled">Inaktiverad</string>
+  <string name="enabled">Aktiverad</string>
+  <!-- preferences.xml categories-->
   <string name="pref_cat_general">AnkiDroid</string>
   <string name="pref_cat_general_summ">Allmäna inställningar</string>
   <string name="pref_cat_reviewing">Repetition</string>
@@ -47,8 +51,10 @@
   <string name="pref_cat_flashcard">Visning</string>
   <string name="pref_cat_whiteboard">Whiteboard</string>
   <string name="pref_cat_automatic_display">VIsa svar automatiskt</string>
-  <string name="pref_cat_fonts">Typsnitt</string>
-  <string name="pref_cat_fonts_summ">Ändra standardteckensnitt och storlek</string>
+  <string name="pref_cat_appearance">Utseende</string>
+  <string name="pref_cat_appearance_summ">Ändra teman och standardteckensnitt</string>
+  <string name="pref_cat_themes">Teman</string>
+  <string name="pref_cat_fonts">Teckensnitt</string>
   <string name="pref_cat_gestures">Gester</string>
   <string name="pref_cat_gestures_summ">Använd klickningar och svepningar istället för knappar</string>
   <string name="pref_cat_actions">Handlingar</string>
@@ -59,29 +65,38 @@
   <string name="pref_cat_plugins">Plugins</string>
   <string name="about_title">Om AnkiDroid</string>
   <string name="about_version">Version: </string>
+  <!-- preferences.xml entries-->
   <string name="whiteboard_stroke_width">Streckbredd</string>
   <string name="whiteboard_black">Monokroma streck</string>
   <string name="whiteboard_black_summ">Använder mindre arbetsminne, men fungerar inte i nattläge</string>
   <string name="write_answers_disable">Stäng av att skriva in svar</string>
   <string name="write_answers_disable_summ">Stoppar tangentbord från att dyka upp på kort med \'skriv in svar\'-fält</string>
+  <string name="use_input_tag">Skriv svar i kortet</string>
+  <string name="use_input_tag_summ">Använd en textinmatningsruta i kortet för att skriva in svaret</string>
   <string name="text_selection_click">Långklicksfix</string>
   <string name="text_selection_click_summ">Aktivera detta om du inte kan påbörja textmarkering via långt klick</string>
   <string name="dictionary">Ordbok</string>
   <string name="reset_languages">Nollställ språk</string>
-  <string name="reset_languages_summ">Återställ språktilldelningar (för text till tal och ordböcker) för alla kortlekar. Återställ specifika kortlekstilldelningar i kortleksväljaren</string>
+  <string name="reset_languages_summ">Återställ språk inställningar (för text till tal och orböcker) för alla kortlekar</string>
   <string name="reset_languages_question">Återställ alla språktilldelningar?</string>
   <string name="reset_confirmation">Alla lägen nollställda</string>
   <string name="card_zoom">Kort-zoom</string>
   <string name="image_zoom">Bild-zoom</string>
   <string name="button_size">Storlek på svarsknapp</string>
   <string name="card_browser_font_size">Typsnittsstorlek i kortbläddrare</string>
-  <string name="col_path">Sökväg för samling</string>
+  <string name="col_path">AnkiDroid sökväg</string>
   <string name="fullscreen_review">Fullskärmsläge</string>
-  <string name="fullscreen_review_summ">Dölj systemets statusrad</string>
+  <string name="full_screen_off">Av</string>
+  <string name="full_screen_system">Dölj systemets statusfält</string>
+  <string name="full_screen_complete">Dölj systemets statusfält och svarsknapparna</string>
+  <string name="full_screen_error_gestures">Du måste aktivera gester för att dölja svarsknapparna</string>
+  <string name="answer_buttons_position">Answer buttons position</string>
+  <string-array name="answer_buttons_position_labels">
+    <item>Top</item>
+    <item>Bottom</item>
+  </string-array>
   <string name="gestures">Aktivera gester</string>
   <string name="gestures_summ">Koppla gester till handlingar, som t ex att svara på eller redigera kort.</string>
-  <string name="gestures_hide_answer_buttons">Göm svarsknappar</string>
-  <string name="gestures_hide_answer_buttons_summ">Visa inte svarsknappar när gester är aktiverade</string>
   <string name="gestures_swipe_up">Svep uppåt</string>
   <string name="gestures_swipe_down">Svep nedåt</string>
   <string name="gestures_swipe_left">Svep vänster</string>
@@ -109,6 +124,8 @@
   <string name="fix_hebrew_text_summ">Specialfunktion för att rendera hebreiska vokaler korrekt.</string>
   <string name="fix_hebrew_instructions">Denna inställning kringgår Androids RTL-algoritm för att visa vokaler i hebreisk text korrekt.\n\nFör att detta skall fungera måste du hämta teckensnittet Tohu.ttf och kopiera manuellt till:\n%s/fonts/\n\nDu behöver inte ändra dina kort.</string>
   <string name="fix_hebrew_download_font">Hämta teckensnitt</string>
+  <string name="day_theme">Dags-tema</string>
+  <string name="night_theme">Natt-tema</string>
   <string name="default_font">Standardteckensnitt</string>
   <string name="override_font">Tillämpning av standardtypsnitt</string>
   <string name="language">Språk</string>
@@ -121,7 +138,7 @@
   <string name="notification_minimum_cards_due_vibrate">Vibrera</string>
   <string name="notification_minimum_cards_due_blink">Blinka</string>
   <string name="timeout_answer_text">Visa svar automatiskt</string>
-  <string name="timeout_answer_summ">Visa svar automatiskt utan användarinput</string>
+  <string name="timeout_answer_summ">Show answer automatically without user input. Delay includes time for automatically played audio files.</string>
   <string name="timeout_answer_seconds">Tid för att visa svar</string>
   <string name="timeout_answer_seconds_summ">XXX s</string>
   <string name="timeout_question_seconds">Tid för att visa nästa fråga</string>
@@ -136,6 +153,8 @@
   <string name="show_estimates_summ">Visa nästa repetitionstid ovan svarsknapparna</string>
   <string name="show_progress">Visa återstående</string>
   <string name="show_progress_summ">Visa antal återstående kort</string>
+  <string name="show_eta">Visa ETA</string>
+  <string name="show_eta_summ">Visa återstående tid</string>
   <string name="use_current">Kortlek för nya kort</string>
   <string name="new_spread">Ny kortposition</string>
   <string name="learn_cutoff">Gräns för att lära i förväg</string>
@@ -148,13 +167,32 @@
   <string name="input_workaround_summ">Specialfunktion för fokuseringsproblem på HTML-inmatningsfält. Orsakar problem på många enheter.</string>
   <string name="pref_keep_screen_on">Håll skärm på</string>
   <string name="pref_keep_screen_on_summ">Inaktivera skärmtimeout</string>
-  <string name="fix_arabic_text">Förbättra visning av arabiska</string>
-  <string name="fix_arabic_text_summ">Delfix för begränsat stöd för arabiska på Android-plattformen. När den aktiveras går det inte att modifiera kort.</string>
   <string name="convert_fen_text">Stöd för schack-notation</string>
-  <string name="filter_google_translate">Från Google Translate</string>
-  <string name="filter_google_translate_summ">Spara endast källord och översättning</string>
   <string name="convert_fen_text_summ">Rita ett schackbräde med Forsyth–Edwards Notation. Notationen måste använda [fen][/fen]-märkning</string>
+  <string name="enable_api_title">Aktivera AnkiDroid API</string>
+  <string name="enable_api_summary">Låt andra appar ansluta till AnkiDroid och läsa / skriva data utan din medverkan</string>
+  <string name="custom_buttons">Appfältets knappar</string>
+  <string name="custom_buttons_summary">Anpassa vilka funktioner som syns i appfältet</string>
+  <string name="custom_buttons_setting_always_show">Visa alltid</string>
+  <string name="custom_buttons_setting_if_room">Visa om möjligt</string>
+  <string name="custom_buttons_setting_menu_only">Endast meny</string>
+  <string name="reset_custom_buttons">Nollställ</string>
+  <!-- Advanced statistics settings -->
+  <string name="advanced_statistics_title">Avancerad statistik</string>
+  <string name="enable_advanced_statistics_title">Aktivera avancerad statistik</string>
+  <string name="enable_advanced_statistics_summ">Visa prognos statistik baserat på en beräkning eller simulation av framtida recensioner (aktiverat) eller på de framtida recensioner som är redan schemalagda (inaktiverad).</string>
+  <string name="advanced_forecast_stats_compute_n_days_title">Beräkna de första n dagarna, simulera resten</string>
+  <string name="advanced_forecast_stats_compute_precision_title">Precision för uträkningen</string>
+  <string name="advanced_forecast_stats_mc_n_iterations_title">Antalet upprepningar av simuleringen</string>
+  <!-- Custom sync server settings -->
+  <string name="custom_sync_server_title">Annan synkroniseringsserver</string>
+  <string name="custom_sync_server_enable_title">Använd annan synkroniseringsserver</string>
+  <string name="custom_sync_server_enable_summary">Om du inte vill använda den proprietära AnkiWeb-tjänsten kan du ange en alternativ server här</string>
+  <string name="custom_sync_server_base_url_title">Synkroniseringsurl</string>
+  <string name="custom_sync_server_media_url_title">Mediasynkroniseringsurl</string>
+  <!-- studyoptions -->
   <string name="studyoptions_limit_select_tags">Välj etiketter</string>
+  <!-- Deck configurations -->
   <string name="deck_conf_deck_description">Kortleksbeskrivning</string>
   <string name="deck_conf_group">Konfigurationsgrupp</string>
   <plurals name="deck_conf_group_summ">
@@ -165,6 +203,7 @@
   <string name="deck_conf_rev_cards">Repetitioner</string>
   <string name="deck_conf_lps_cards">Felsvar</string>
   <string name="deck_conf_general">Allmän</string>
+  <string name="deck_conf_reminders">Reminders</string>
   <string name="deck_conf_steps">Steg (i minuter)</string>
   <string name="deck_conf_order">Ordning</string>
   <string name="deck_conf_new_cards_day">Nya kort/dag</string>
@@ -217,6 +256,8 @@
   <string name="deck_conf_cram_order">kort valda efter</string>
   <string name="deck_conf_cram_reschedule">Omplanera</string>
   <string name="deck_conf_cram_reschedule_summ">Omplanera kort baserat på mina svar i denna kortlek</string>
-  <string name="deck_conf_cram_steps">Anpassade steg</string>
+  <string name="deck_conf_cram_steps">Custom steps (in minutes)</string>
   <string name="deck_conf_cram_steps_summ">Definiera anpassade steg</string>
+  <string name="deck_conf_reminders_enabled">Enable reminder notifications for this deck</string>
+  <string name="deck_conf_reminders_time">Remind at</string>
 </resources>
