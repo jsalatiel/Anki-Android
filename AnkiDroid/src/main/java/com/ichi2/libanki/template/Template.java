@@ -291,16 +291,7 @@ public class Template {
         m.reset();
         StringBuffer repl = new StringBuffer();
         while (m.find()) {
-            // replace chosen cloze with type
-            if (type == 'q') {
-                if (!TextUtils.isEmpty(m.group(3))) {
-                    m.appendReplacement(repl, "<span class=cloze>[$3]</span>");
-                } else {
-                    m.appendReplacement(repl, "<span class=cloze>[...]</span>");
-                }
-            } else {
-                m.appendReplacement(repl, "<span class=cloze>$1</span>");
-            }
+            m.appendReplacement(repl, "<span class=cloze>$1</span>");
         }
         txt = m.appendTail(repl).toString();
         // and display other clozes normally
