@@ -24,53 +24,10 @@ import java.util.regex.Pattern;
 public class FuriganaFilters {
     private static final Pattern r = Pattern.compile(" ?([^ >]+?)\\[(.+?)\\]");
 
-    // Since there is no ruby tag support in Android before 3.0 (SDK version 11), we must use an alternative
-    // approach to align the elements. Anki does the same thing in aqt/qt.py for earlier versions of qt.
-    // The fallback approach relies on CSS in the file /assets/ruby.css
-    private static final String RUBY = CompatHelper.isHoneycomb() ? "<ruby><rb>$1</rb><rt>$2</rt></ruby>"
-            : "<span class='legacy_ruby_rb'><span class='legacy_ruby_rt'>$2</span>$1</span>";
-
+    private static final String RUBY = "<ruby><rb>$1</rb><rt>$2</rt></ruby>";
 
     public void install(Hooks h) {
-        h.addHook("fmod_kanji", new Kanji());
-        h.addHook("fmod_kana", new Kana());
-        h.addHook("fmod_furigana", new Furigana());
-    }
-
-
-    private static String noSound(Matcher match, String repl) {
-        if (match.group(2).startsWith("sound:")) {
-            // return without modification
-            return match.group(0);
-        } else {
-            return r.matcher(match.group(0)).replaceAll(repl);
-        }
-    }
-
-    public class Kanji extends Hook {
-        @Override
-        public Object runFilter(Object arg, Object... args) {
-            Matcher m = r.matcher((String) arg);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                m.appendReplacement(sb, noSound(m, "$1"));
-            }
-            m.appendTail(sb);
-            return sb.toString();
-        }
-    }
-
-    public class Kana extends Hook {
-        @Override
-        public Object runFilter(Object arg, Object... args) {
-            Matcher m = r.matcher((String) arg);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                m.appendReplacement(sb, noSound(m, "$2"));
-            }
-            m.appendTail(sb);
-            return sb.toString();
-        }
+        h.addHook("mungeQA", new Furigana());
     }
 
     public class Furigana extends Hook {
@@ -79,10 +36,11 @@ public class FuriganaFilters {
             Matcher m = r.matcher((String) arg);
             StringBuffer sb = new StringBuffer();
             while (m.find()) {
-                m.appendReplacement(sb, noSound(m, RUBY));
+                m.appendReplacement(sb, RUBY);
             }
             m.appendTail(sb);
             return sb.toString();
         }
     }
+
 }
