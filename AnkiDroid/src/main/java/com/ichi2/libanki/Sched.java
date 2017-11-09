@@ -27,6 +27,7 @@ import android.graphics.Typeface;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.style.StyleSpan;
+import android.widget.Toast;
 
 import com.ichi2.anki.R;
 import com.ichi2.libanki.hooks.Hooks;
@@ -63,6 +64,8 @@ public class Sched {
     private boolean mHaveCustomStudy = true;
     private boolean mSpreadRev = true;
     private boolean mBurySiblingsOnAnswer = true;
+    private boolean mixNewRevLearn = false;
+    private boolean mixLearnDayLearnOld = false;
 
     private Collection mCol;
     private int mQueueLimit;
@@ -527,11 +530,8 @@ public class Sched {
      * Return the next due card, or null.
      */
     private Card _getCard() {
-        // learning card due?
-        Card c = _getLrnCard();
-        if (c != null) {
-            return c;
-        }
+        Card c;
+
         // new first, or time for one?
         if (_timeForNewCard()) {
             c = _getNewCard();
@@ -539,16 +539,33 @@ public class Sched {
                 return c;
             }
         }
+
+        mixNewRevLearn = !mixNewRevLearn;
+
+        if (mixNewRevLearn) {
+            mixLearnDayLearnOld = !mixLearnDayLearnOld;
+            if (mixLearnDayLearnOld) {
+                // day learning card due?
+                c = _getLrnDayCard();
+                if (c != null) {
+                    return c;
+                }
+            }
+            else {
+                // learning card due?
+                c = _getLrnCard();
+                if (c != null) {
+                    return c;
+                }
+            }
+        }
+
         // Card due for review?
         c = _getRevCard();
         if (c != null) {
             return c;
         }
-        // day learning card due?
-        c = _getLrnDayCard();
-        if (c != null) {
-            return c;
-        }
+
         // New cards left?
         c = _getNewCard();
         if (c != null) {
@@ -1614,6 +1631,14 @@ public class Sched {
         /*if (mSpreadRev) {
             idealIvl = _fuzzedIvl(idealIvl);
         }*/
+        final int toastDue = idealIvl;
+        if (mContextReference!=null)
+            mContextReference.get().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContextReference.get(),"Due in " + toastDue + " days", Toast.LENGTH_SHORT).show();
+                }
+            });
         return idealIvl;
     }
 
@@ -1643,7 +1668,16 @@ public class Sched {
             throw new RuntimeException(e1);
         }
         // move any existing cards back first, then fill
-        emptyDyn(did);
+        // sorry, rebuild dynamic deck should not touch current progress, so not emptying
+        if (mContextReference!=null)
+            mContextReference.get().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContextReference.get(), "Rebuilt keeping old cards", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        //emptyDyn(did);
         List<Long> ids = _fillDyn(deck);
         if (ids.isEmpty()) {
             return null;
