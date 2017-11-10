@@ -625,7 +625,8 @@ public abstract class AbstractFlashcardViewer extends NavigationDrawerActivity {
                 String mins = res.getQuantityString(R.plurals.timebox_reached_minutes, nMins, nMins);
                 String timeboxMessage = res.getQuantityString(R.plurals.timebox_reached, nCards, nCards, mins);
                 UIUtils.showThemedToast(AbstractFlashcardViewer.this, timeboxMessage, true);
-                getCol().startTimebox();
+                onBackPressed();
+//                getCol().startTimebox();
             }
         }
 
