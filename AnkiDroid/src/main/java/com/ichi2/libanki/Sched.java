@@ -532,16 +532,7 @@ public class Sched {
     private Card _getCard() {
         Card c;
 
-        // new first, or time for one?
-        if (_timeForNewCard()) {
-            c = _getNewCard();
-            if (c != null) {
-                return c;
-            }
-        }
-
         mixNewRevLearn = !mixNewRevLearn;
-
         if (mixNewRevLearn) {
             mixLearnDayLearnOld = !mixLearnDayLearnOld;
             if (mixLearnDayLearnOld) {
@@ -551,12 +542,18 @@ public class Sched {
                     return c;
                 }
             }
-            else {
-                // learning card due?
-                c = _getLrnCard();
-                if (c != null) {
-                    return c;
-                }
+            // learning card due?
+            c = _getLrnCard();
+            if (c != null) {
+                return c;
+            }
+        }
+
+        // new first, or time for one?
+        if (_timeForNewCard()) {
+            c = _getNewCard();
+            if (c != null) {
+                return c;
             }
         }
 
