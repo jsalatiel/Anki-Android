@@ -521,6 +521,16 @@ public class Sched {
     }
 
 
+    private void toast(final String msg) {
+        if (mContextReference!=null)
+            mContextReference.get().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContextReference.get(),msg, Toast.LENGTH_SHORT).show();
+                }
+            });
+    }
+
     /**
      * Getting the next card ****************************************************
      * *******************************************
@@ -1628,14 +1638,7 @@ public class Sched {
         /*if (mSpreadRev) {
             idealIvl = _fuzzedIvl(idealIvl);
         }*/
-        final int toastDue = idealIvl;
-        if (mContextReference!=null)
-            mContextReference.get().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContextReference.get(),"Due in " + toastDue + " days", Toast.LENGTH_SHORT).show();
-                }
-            });
+        toast("Due in " + idealIvl + " days");
         return idealIvl;
     }
 
@@ -1666,14 +1669,7 @@ public class Sched {
         }
         // move any existing cards back first, then fill
         // sorry, rebuild dynamic deck should not touch current progress, so not emptying
-        if (mContextReference!=null)
-            mContextReference.get().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContextReference.get(), "Rebuilt keeping old cards", Toast.LENGTH_SHORT).show();
-                }
-            });
-
+        toast("Rebuilt keeping old cards");
         //emptyDyn(did);
         List<Long> ids = _fillDyn(deck);
         if (ids.isEmpty()) {
