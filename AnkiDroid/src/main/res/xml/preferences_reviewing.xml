@@ -59,7 +59,7 @@
             android:title="@string/custom_buttons"
             android:key="custom_buttons_link"/>
         <CheckBoxPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="keepScreenOn"
             android:summary="@string/pref_keep_screen_on_summ"
             android:title="@string/pref_keep_screen_on" />
@@ -118,7 +118,7 @@
             android:title="@string/show_progress" />
         <CheckBoxPreference
             android:key="showETA"
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:summary="@string/show_eta_summ"
             android:title="@string/show_eta" />
     </PreferenceCategory>
