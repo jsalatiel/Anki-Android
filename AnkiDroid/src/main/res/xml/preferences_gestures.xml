@@ -26,7 +26,7 @@
     android:title="@string/pref_cat_gestures"
     android:summary="@string/pref_cat_gestures_summ" >
     <CheckBoxPreference
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:disableDependentsState="false"
         android:key="gestures"
         android:summary="@string/gestures_summ"
@@ -84,7 +84,7 @@
             android:summary=""
             android:title="@string/gestures_double_tap" />
         <ListPreference
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:dependency="gestures"
             android:entries="@array/gestures_labels"
             android:entryValues="@array/gestures_values"
@@ -92,7 +92,7 @@
             android:summary=""
             android:title="@string/gestures_tap_top" />
         <ListPreference
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:dependency="gestures"
             android:entries="@array/gestures_labels"
             android:entryValues="@array/gestures_values"
@@ -100,7 +100,7 @@
             android:summary=""
             android:title="@string/gestures_tap_bottom" />
         <ListPreference
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:dependency="gestures"
             android:entries="@array/gestures_labels"
             android:entryValues="@array/gestures_values"
@@ -108,7 +108,7 @@
             android:summary=""
             android:title="@string/gestures_tap_left" />
         <ListPreference
-            android:defaultValue="1"
+            android:defaultValue="0"
             android:dependency="gestures"
             android:entries="@array/gestures_labels"
             android:entryValues="@array/gestures_values"
