@@ -59,13 +59,14 @@ public class Sched {
 
     // Not in libanki
     private static final int[] FACTOR_ADDITION_VALUES = { -150, 0, 150 };
+    private static boolean mixNewRevLearn = false;
+    private static boolean mixDailyOldLearn = false;
 
     private String mName = "std";
     private boolean mHaveCustomStudy = true;
     private boolean mSpreadRev = true;
     private boolean mBurySiblingsOnAnswer = true;
-    private boolean mixNewRevLearn = false;
-    private boolean mixLearnDayLearnOld = false;
+
 
     private Collection mCol;
     private int mQueueLimit;
@@ -543,21 +544,6 @@ public class Sched {
         Card c;
 
         mixNewRevLearn = !mixNewRevLearn;
-        if (mixNewRevLearn) {
-            mixLearnDayLearnOld = !mixLearnDayLearnOld;
-            if (mixLearnDayLearnOld) {
-                // day learning card due?
-                c = _getLrnDayCard();
-                if (c != null) {
-                    return c;
-                }
-            }
-            // learning card due?
-            c = _getLrnCard();
-            if (c != null) {
-                return c;
-            }
-        }
 
         // new first, or time for one?
         if (_timeForNewCard()) {
@@ -567,8 +553,33 @@ public class Sched {
             }
         }
 
+        if (mixNewRevLearn) {
+            mixDailyOldLearn = !mixDailyOldLearn;
+            if (mixDailyOldLearn) {
+                c = _getLrnDayCard();
+                if (c != null)
+                    return c;
+                c = _getLrnCard();
+                if (c != null)
+                    return c;
+            }
+            else {
+                c = _getLrnCard();
+                if (c != null)
+                    return c;
+                c = _getLrnDayCard();
+                if (c != null)
+                    return c;
+            }
+        }
+
         // Card due for review?
         c = _getRevCard();
+        if (c != null) {
+            return c;
+        }
+
+        c = _getLrnDayCard();
         if (c != null) {
             return c;
         }
@@ -708,7 +719,7 @@ public class Sched {
         } else if (spread == Consts.NEW_CARDS_FIRST) {
             return true;
         } else if (mNewCardModulus != 0) {
-            return (mReps != 0 && (mReps % mNewCardModulus == 0));
+            return (mReps != 0 && (mReps % mNewCardModulus == 0) && !mixNewRevLearn);
         } else {
             return false;
         }
